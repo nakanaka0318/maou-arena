@@ -297,6 +297,9 @@ textarea:focus{border-color:var(--accent)}
 .duo-vs em{font-style:normal;font-family:var(--fd);color:var(--gold);font-size:20px;text-shadow:0 0 12px #f6c15288}
 #bb2 .bb{height:10px}#bb2-fill{background:linear-gradient(180deg,#8ab8ff,#3a6ae8);width:100%}#bb2 .bb-top b{font-size:13px}
 .phase.rage{background:linear-gradient(90deg,#ff3a4a,#ff9a3d);color:#fff;box-shadow:0 0 10px #ff3a4a}
+.upd{position:fixed;left:50%;top:calc(var(--st) + 58px);transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:10px 16px;border-radius:14px;background:linear-gradient(90deg,#3a2a6a,#1a3a5a);border:1px solid #9a8aff;box-shadow:0 6px 20px #0008,0 0 16px #9a8aff66;font-weight:800;font-size:13px;color:#fff;white-space:nowrap;animation:updIn .4s ease-out}
+.upd i{font-style:normal;font-size:16px}
+@keyframes updIn{from{transform:translate(-50%,-20px);opacity:0}}
 /* ---------- HUD ---------- */
 .hud{pointer-events:none;gap:6px;touch-action:none}
 .hud>*{pointer-events:auto}
@@ -597,6 +600,7 @@ textarea:focus{border-color:var(--accent)}
     <div class="shop-list scroll" id="shop-list"></div>
   </div>
 </section>
+<button id="upd" class="upd" hidden><i>✦</i>新しいバージョンがあります　タップで更新</button>
 <div id="toast" style="opacity:0"></div>
 <div id="legendfx"></div>
 
@@ -604,6 +608,7 @@ textarea:focus{border-color:var(--accent)}
 <script>
 (function(){
 'use strict';
+const BUILD='b20260927145656';
 
 /* =========================================================
    ズーム・選択ハイライトの抑止（スマホ向け）
@@ -680,8 +685,8 @@ const PS=[
   use(){for(let i=G.eproj.length-1;i>=0;i--){const p=G.eproj[i];if(Math.hypot(p.x-P.x,p.z-P.z)<6){p.onEnd=null;killEproj(i);}}ringAttack(4.5,2,'magic',0x9be7ff,e=>{e.slowT=3;});ringFx(P.x,P.z,6,0x9be7ff,.5);}},
  {id:'thunder',cat:'magic',rar:'R',icon:'轟',name:'サンダー',cd:6,desc:'狙った敵に落雷を落とす。必中ATK×6。',
   use(){const t=ptarget();if(!t)return;later(.2,()=>{if(t.hp>0){boltFx(t.x,t.z,0xbfe4ff);hitEnemy(t,6,'magic');}});}},
- {id:'heal',cat:'magic',rar:'R',icon:'癒',name:'ヒール',cd:14,desc:'最大HPの25%を回復する。',
-  use(){healP(P.maxHp*.25);burst(P.x,1,P.z,0x5fe3a1,20,4,.7);ringFx(P.x,P.z,2,0x5fe3a1,.5);}},
+ {id:'heal',cat:'magic',rar:'R',icon:'癒',name:'ヒール',cd:18,desc:'最大HPの12%を回復する。',
+  use(){healP(P.maxHp*.12);burst(P.x,1,P.z,0x5fe3a1,20,4,.7);ringFx(P.x,P.z,2,0x5fe3a1,.5);}},
  {id:'barrier',cat:'magic',rar:'SR',icon:'護',name:'バリア',cd:15,desc:'8秒間、40ダメージまで防ぐ障壁を張る。',
   use(){P.shield=40;P.shieldT=8;}},
  {id:'meteor',cat:'magic',rar:'SSR',icon:'隕',name:'メテオ',cd:12,desc:'1秒後、狙った地点に巨大隕石。範囲ATK×14。',
@@ -689,7 +694,7 @@ const PS=[
  // ---- 特殊 ----
  {id:'awaken',cat:'special',rar:'R',icon:'覚',name:'覚醒',cd:25,desc:'8秒間、与えるダメージが1.8倍になる。',
   use(){P.awakenT=8;ringFx(P.x,P.z,3,0xffc93c,.5);burst(P.x,1,P.z,0xffc93c,24,6,.6);}},
- {id:'vampire',cat:'special',rar:'R',icon:'血',name:'吸血',cd:24,desc:'10秒間、与えたダメージの25%だけHPを回復する。',
+ {id:'vampire',cat:'special',rar:'R',icon:'血',name:'吸血',cd:24,desc:'10秒間、与えたダメージの10%だけHPを回復する。',
   use(){P.stealT=10;ringFx(P.x,P.z,3,0xff4a63,.5);}},
  {id:'swords',cat:'special',rar:'SR',icon:'剣',name:'守護剣',cd:25,desc:'10秒間、3本の剣が周囲を回り、敵弾を斬り落とし触れた敵を斬る（ATK×1）。',
   use(){P.swordsT=10;ensureSwords();}},
@@ -731,11 +736,11 @@ const PS=[
  // ---- 追加スキル：特殊 ----
  {id:'frenzy',cat:'special',rar:'R',icon:'狂',name:'狂化',cd:22,desc:'8秒間、通常攻撃の速度が2倍。ただし受けるダメージ+20%。',
   use(){P.frenzyT=8;ringFx(P.x,P.z,3,0xff4a63,.5);burst(P.x,1,P.z,0xff4a63,20,6,.6);}},
- {id:'sanctuary',cat:'special',rar:'SR',icon:'聖',name:'聖域',cd:28,desc:'足元に6秒間の聖域を張る。中にいる間、毎秒HP5回復・受けるダメージ-40%。',
+ {id:'sanctuary',cat:'special',rar:'SR',icon:'聖',name:'聖域',cd:28,desc:'足元に6秒間の聖域を張る。中にいる間、毎秒HP2回復・受けるダメージ-40%。',
   use(){makeSanct();}},
  {id:'shadowclone',cat:'special',rar:'SR',icon:'忍',name:'分身の術',cd:26,desc:'8秒間、自分の分身が横に並び、0.4秒ごとに魔弾（ATK×0.9）を撃つ。',
   use(){makeAlly();}},
- {id:'phoenix',cat:'special',rar:'SSR',icon:'鳳',name:'不死鳥',cd:45,desc:'炎の翼で周囲5mにATK×8。10秒間、致命傷を受けてもHP40%で踏みとどまる。',
+ {id:'phoenix',cat:'special',rar:'SSR',icon:'鳳',name:'不死鳥',cd:45,desc:'炎の翼で周囲5mにATK×8。10秒間、致命傷を受けてもHP20%で踏みとどまる。',
   use(){ringAttack(5,8,'magic',0xff9a3d);boomFx(P.x,P.z,5,0xff9a3d);P.phoenixT=10;G.shake=.4;}},
  // ---- 追加スキル第2弾：移動 ----
  {id:'sidestep',cat:'move',rar:'N',icon:'側',name:'側転',cd:2.4,desc:'敵を見たまま左右に4.5m側転する。スティックの向きで左右を選べる。',
@@ -746,8 +751,8 @@ const PS=[
   use(){P.phaseT=.45;dash(moveDir(),6,.2);burst(P.x,1,P.z,0xbfd8ff,14,4,.4);}},
  {id:'jet',cat:'move',rar:'R',icon:'噴',name:'噴射',cd:6,desc:'7m噴射して進み、通った跡に炎を残す。炎は1.5秒間、触れた敵に0.5秒ごとATK×0.8。',
   use(){const x0=P.x,z0=P.z,d=moveDir();dash(d,7,.2);for(let k=0;k<5;k++){const x=x0+d.x*k*1.5,z=z0+d.z*k*1.5;allyZone({shape:'circle',x,z,r:1.2,t:1.5,every:.5,mult:.8,kind:'magic',color:0xff8a3d});}}},
- {id:'rewind',cat:'move',rar:'SR',icon:'戻',name:'時戻し',cd:12,desc:'2秒前にいた場所へ戻り、その2秒間に失ったHPの半分を取り戻す。',
-  use(){const h=P.hist;const old=h.find(o=>G.t-o.t<=2.05)||h[0];if(!old)return;burst(P.x,1,P.z,0xffd98a,16,5,.5);const lost=Math.max(0,old.hp-P.hp);P.x=old.x;P.z=old.z;P.dashT=0;if(lost>0)healP(lost*.5);burst(P.x,1,P.z,0xffd98a,16,5,.5);ringFx(P.x,P.z,2,0xffd98a,.4);}},
+ {id:'rewind',cat:'move',rar:'SR',icon:'戻',name:'時戻し',cd:12,desc:'2秒前にいた場所へ戻り、その2秒間に失ったHPの4分の1を取り戻す。',
+  use(){const h=P.hist;const old=h.find(o=>G.t-o.t<=2.05)||h[0];if(!old)return;burst(P.x,1,P.z,0xffd98a,16,5,.5);const lost=Math.max(0,old.hp-P.hp);P.x=old.x;P.z=old.z;P.dashT=0;if(lost>0)healP(lost*.25);burst(P.x,1,P.z,0xffd98a,16,5,.5);ringFx(P.x,P.z,2,0xffd98a,.4);}},
  {id:'comet',cat:'move',rar:'SSR',icon:'彗',name:'彗星',cd:10,desc:'狙った敵のもとへ彗星のように飛び込み、周囲3.5mにATK×7。',
   use(){const t=ptarget();if(!t){dash(moveDir(),7,.2);return;}const dx=t.x-P.x,dz=t.z-P.z,d=Math.hypot(dx,dz)||1;const len=Math.max(.1,d-t.r-1);dash({x:dx/d,z:dz/d},len,.25,{});later(.25,()=>{areaHit(P.x,P.z,3.5,7,'magic');boomFx(P.x,P.z,3.5,0x9ad8ff);G.shake=.5;});}},
  // ---- 追加スキル第2弾：攻撃 ----
@@ -787,7 +792,7 @@ const PS=[
   use(){P.odT=8;ringFx(P.x,P.z,3,0xff7a4a,.5);burst(P.x,1,P.z,0xff7a4a,24,6,.6);}},
  {id:'dragonsoul',cat:'special',rar:'SSR',icon:'竜',name:'竜魂',cd:40,desc:'8秒間、竜の魂が周りを飛び回り、0.5秒ごとに敵へ炎を吐く（ATK×2）。',
   use(){makeSpirit();}},
- {id:'blessing',cat:'special',rar:'SSR',icon:'祝',name:'天使の祝福',cd:50,desc:'3秒かけてHPを最大値まで回復し、鈍足・拘束・猛毒を消す。',
+ {id:'blessing',cat:'special',rar:'SSR',icon:'祝',name:'天使の祝福',cd:55,desc:'3秒かけて最大HPの35%を回復し、鈍足・拘束・猛毒を消す。',
   use(){P.blessT=3;P.slowT=0;P.rootT=0;P.venomT=0;ringFx(P.x,P.z,3,0xfff4c0,.6);burst(P.x,2,P.z,0xfff4c0,24,5,.8);}},
  // ---- 追加スキル第3弾 ----
  {id:'glide',cat:'move',rar:'N',icon:'翔',name:'滑空',cd:4,desc:'ふわりと7m滑空し、その間に敵へ魔弾を2発撃つ（1発ATK×1）。',
@@ -824,9 +829,9 @@ const PS=[
   use(){P.bulwarkT=5;ringFx(P.x,P.z,2.5,0xd8c890,.5);}},
  {id:'refresh',cat:'special',rar:'R',icon:'刻',name:'時の加護',cd:26,desc:'移動・攻撃・魔法スキルのクールタイムをすべて0にする。',
   use(){['move','attack','magic'].forEach(c=>P.cds[c]=0);ringFx(P.x,P.z,2.5,0x9dffcf,.4);}},
- {id:'gambit',cat:'special',rar:'SR',icon:'賭',name:'賭博師',cd:18,desc:'ルーレットを回す。覚醒8秒・HP40%回復・時間停止2秒・全クールタイム回復・大当たり（ATK×15の雷）・ハズレのどれかが起きる。',
+ {id:'gambit',cat:'special',rar:'SR',icon:'賭',name:'賭博師',cd:18,desc:'ルーレットを回す。覚醒8秒・HP15%回復・時間停止2秒・全クールタイム回復・大当たり（ATK×15の雷）・ハズレのどれかが起きる。',
   use(){const r=Math.floor(Math.random()*6);const names=['覚醒！','回復！','時間停止！','CT回復！','大当たり！','ハズレ…'];floatText(P.x,2.8,P.z,names[r],r===5?'hurt':'crit');
-   if(r===0)P.awakenT=8;else if(r===1)healP(P.maxHp*.4);else if(r===2)G.frozen=2;else if(r===3){['move','attack','magic'].forEach(c=>P.cds[c]=0);}else if(r===4){const t=ptarget();if(t){boltFx(t.x,t.z,0xffd36b);hitEnemy(t,15,'magic');}}}},
+   if(r===0)P.awakenT=8;else if(r===1)healP(P.maxHp*.15);else if(r===2)G.frozen=2;else if(r===3){['move','attack','magic'].forEach(c=>P.cds[c]=0);}else if(r===4){const t=ptarget();if(t){boltFx(t.x,t.z,0xffd36b);hitEnemy(t,15,'magic');}}}},
  {id:'avatar',cat:'special',rar:'SSR',icon:'巨',name:'化身',cd:45,desc:'10秒間、巨大化する。通常攻撃のダメージが2倍、受けるダメージ-20%。',
   use(){P.avatarT=10;ringFx(P.x,P.z,3,0xffc93c,.5);burst(P.x,1,P.z,0xffc93c,24,6,.6);}},
  {id:'horizon',cat:'special',rar:'SSR',icon:'穴',name:'事象の地平',cd:40,desc:'狙った地点に4秒間黒い渦を生む。近くの敵弾を吸い込んで消し、0.25秒ごとにATK×1.5。',
@@ -863,7 +868,7 @@ const PSK={};PS.forEach(s=>PSK[s.id]=s);
    ========================================================= */
 const bm=()=>P.st.basicMul*(P.avatarT>0?2:1);
 const rm=()=>(P.st.atkRate/.32)*(P.frenzyT>0?.5:1);
-function bshot(a,spd,o){const n=P.st.multishot;if(n>1&&o.dmg)o=Object.assign({},o,{dmg:o.dmg*.65});let last=null;for(let q=0;q<n;q++){last=pshot(a+(q-(n-1)/2)*.12,spd,Object.assign({pierce:P.st.pierceBasic},o,{extra:Object.assign({basic:true},o.extra||{})}));}return last;}
+function bshot(a,spd,o){const n=P.st.multishot;if(n>1&&o.dmg)o=Object.assign({},o,{dmg:o.dmg*.6});let last=null;for(let q=0;q<n;q++){last=pshot(a+(q-(n-1)/2)*.12,spd,Object.assign({pierce:P.st.pierceBasic},o,{extra:Object.assign({basic:true},o.extra||{})}));}return last;}
 function bladeLine(x0,z0,a,len,w,mult,color){const c=Math.cos(a),s=Math.sin(a);for(const e of enemies()){const dx=e.x-x0,dz=e.z-z0,lx=dx*c+dz*s,lz=-dx*s+dz*c;if(lx>-e.r&&lx<len+e.r&&Math.abs(lz)<w/2+e.r)hitEnemy(e,mult,'phys',{basic:true});}beamFx({x:x0,z:z0,a,len,w:w*.35},color);}
 function flameStream(a,len,col){for(let i=0;i<3;i++){const m=new THREE.Mesh(GEO.sph,bmat(Math.random()<.5?col:0xffd24a));const aa=a+rnd(-.35,.35),sp=rnd(9,13);let x=P.x+Math.cos(a)*.7,z=P.z+Math.sin(a)*.7;m.scale.setScalar(.15);
   addFx({mesh:m,shared:true,life:len/sp,update:(f,dt)=>{x+=Math.cos(aa)*sp*dt;z+=Math.sin(aa)*sp*dt;m.position.set(x,1+f.t*.8,z);m.scale.setScalar(.15+f.t*1.2);}});}}
@@ -892,8 +897,8 @@ const BASIC=[
   desc:'敵を貫いて手元に戻ってくる円輪を投げる（行きと帰りでATK×1.4ずつ）。同時に飛ばせるのは2枚まで。戻ってきた円輪をつかむと、すぐに次を投げられる。',
   fire(a){if(G.pproj.filter(p=>p.chakram).length>=2)return false;const p=pshot(a,19,{dmg:1.4*bm(),pierce:true,r:.45,color:0xcfe8ff,life:.9,ret:true,geo:'ring',extra:{basic:true}});p.chakram=true;p.onCatch=()=>{P.atkT=Math.min(P.atkT,.04);burst(P.x,1.1,P.z,0xcfe8ff,4,2,.2);};sfx('slash');}},
  {id:'scythe',rar:'LEGEND',icon:'鎌',name:'冥府の鎌',wpn:'scythe',rate:.5,spec:'周囲を薙ぐ・吸収',
-  desc:'大鎌で自分の周り3.4mを薙ぎ払う（ATK×1.5）。与えたダメージの8%を吸収する。4回振るごとに魂が2つ飛び出し、敵を追いかける（ATK×2）。',
-  fire(a){P.ba.n++;P.swing=.35;P.swingDir=1;ringAttack(3.4,1.5*bm(),'phys',0xb070ff,null,{basic:true,steal:.08});
+  desc:'大鎌で自分の周り3.4mを薙ぎ払う（ATK×1.5）。与えたダメージの3%を吸収する。4回振るごとに魂が2つ飛び出し、敵を追いかける（ATK×2）。',
+  fire(a){P.ba.n++;P.swing=.35;P.swingDir=1;ringAttack(3.4,1.5*bm(),'phys',0xb070ff,null,{basic:true,steal:.03});
    if(P.ba.n%4===0)for(let i=0;i<2;i++)pshot(a+(i?.7:-.7),12,{dmg:2*bm(),homing:5,kind:'magic',color:0xd080ff,r:.3,life:2,extra:{basic:true}});sfx('slash');}},
  {id:'skybow',rar:'LEGEND',icon:'穹',name:'天穹の弓',wpn:'bow',rate:.42,spec:'貫通・遠いほど強い',
   desc:'敵を貫く矢を放つ。遠くまで飛ぶほど威力が上がる（最大で2.5倍、ATK×2.5）。この弓で撃った矢は会心率+15%。',
@@ -936,8 +941,8 @@ const BASIC=[
   fire(a){const b=P.ba;b.n++;if(b.shadow){const t=ptarget();if(t&&Math.hypot(t.x-P.x,t.z-P.z)<12){b.shadow=false;burst(P.x,1,P.z,0x9a6af0,12,5,.4);const aa=Math.atan2(P.z-t.z,P.x-t.x)+Math.PI;P.x=t.x+Math.cos(aa)*(t.r+1.3);P.z=t.z+Math.sin(aa)*(t.r+1.3);clampArena(P,.5);P.a=aa+Math.PI;P.noCollide=.3;hitEnemy(t,6*bm(),'phys',{basic:true,crit:.5});sectorFx(P.x,P.z,P.a,3,.8,0xc8a8ff);burst(t.x,1.5,t.z,0x9a6af0,20,6,.5);sfx('crit');return;}}
    P.swing=.12;P.swingDir=b.n%2?1:-1;arcAttack(2.8,Math.PI/3,.5*bm(),'phys',b.n%2?0xd8d0ff:0xb8a8ff,null,{basic:true,quiet:true});if(!b.shadow&&b.n%20===0){b.shadow=true;floatText(P.x,2.6,P.z,'影が満ちた','crit small');}if(b.n%2)sfx('slash');}},
  {id:'harp',rar:'LEGEND',icon:'琴',name:'天奏のハープ',wpn:'harp',rate:.26,spec:'波打つ音符・演奏で回復',
-  desc:'波を描いて進む音符を奏でる（ATK×0.75・貫通）。4音目ごとに和音になり、3つの音符が広がる。演奏している間、少しずつHPが回復する（毎秒約1.2）。',
-  fire(a){const b=P.ba;b.n++;const ch=b.n%4===0;(ch?[-.3,0,.3]:[0]).forEach((o,i)=>{const aa=a+o,ph=(b.n+i)*1.3;let t=0;const p=bshot(aa,15,{dmg:.75*bm(),kind:'magic',r:.24,color:[0xffb0e0,0xb0e0ff,0xfff0a0][(b.n+i)%3],pierce:true,life:1.2});p.upd=(q,dt)=>{t+=dt;const w=Math.cos(t*11+ph)*6;q.vx=Math.cos(aa)*15+Math.cos(aa+Math.PI/2)*w;q.vz=Math.sin(aa)*15+Math.sin(aa+Math.PI/2)*w;};});healP(.32,true);sfx(ch?'heal':'click');}},
+  desc:'波を描いて進む音符を奏でる（ATK×0.75・貫通）。4音目ごとに和音になり、3つの音符が広がる。演奏している間、少しずつHPが回復する（毎秒約0.45）。',
+  fire(a){const b=P.ba;b.n++;const ch=b.n%4===0;(ch?[-.3,0,.3]:[0]).forEach((o,i)=>{const aa=a+o,ph=(b.n+i)*1.3;let t=0;const p=bshot(aa,15,{dmg:.75*bm(),kind:'magic',r:.24,color:[0xffb0e0,0xb0e0ff,0xfff0a0][(b.n+i)%3],pierce:true,life:1.2});p.upd=(q,dt)=>{t+=dt;const w=Math.cos(t*11+ph)*6;q.vx=Math.cos(aa)*15+Math.cos(aa+Math.PI/2)*w;q.vz=Math.sin(aa)*15+Math.sin(aa+Math.PI/2)*w;};});healP(.12,true);sfx(ch?'heal':'click');}},
  {id:'funnel',rar:'LEGEND',icon:'機',name:'浮遊砲台ファンネル',wpn:'bits',spec:'長押しで砲台が増える・自動射撃',
   desc:'長押ししている間、0.5秒ごとに浮遊砲台が1つずつ周りに現れる（最大4つ）。砲台はそれぞれ狙った敵へ自動でビームを撃つ（ATK×0.55）。離すと、砲台は3秒後に消える。',
   update(dt,hold){const b=P.ba;b.bits=b.bits||[];b.bt=(b.bt||0)-dt;
@@ -968,42 +973,42 @@ const BR=[
  {id:'tec',name:'技巧',col:'#c783ff',a:210},
 ];
 const TD={
- hp:[['体','体力強化I','最大HP+15',s=>{s.maxHp+=15;}],['体','体力強化II','最大HP+15',s=>{s.maxHp+=15;}],['泉','生命の泉','毎秒HPが0.6回復する',s=>{s.regenPs+=.6;}],
-     ['壁','鉄壁','受けるダメージ-10%',s=>{s.dmgTaken*=.9;}],['活','活力','最大HP+25',s=>{s.maxHp+=25;}],
-     ['堅','堅牢','受けるダメージ-8%',s=>{s.dmgTaken*=.92;}],['盾','開幕の盾','戦闘開始時、30ダメージを防ぐバリアを張る（12秒）',s=>{s.startShield+=30;}],
-     ['魂','不屈','1戦に1度、HPが0になってもHP30%で復活する',s=>{s.revive=true;}]],
- atk:[['力','攻撃強化I','ATK+2',s=>{s.atk+=2;}],['力','攻撃強化II','ATK+2',s=>{s.atk+=2;}],['剣','剣豪','物理ダメージ+20%（通常攻撃・攻撃スキル・移動スキルの攻撃）',s=>{s.physMul+=.2;}],
-     ['会','会心の心得','会心率+8%',s=>{s.crit+=.08;}],['追','追撃','通常攻撃のダメージ+30%',s=>{s.basicMul+=.3;}],
-     ['極','会心の極意','会心ダメージが2倍から2.6倍になる',s=>{s.critMul=Math.max(s.critMul,2.6);}],['双','多重射撃','通常攻撃が2発同時に出る。ただし1発のダメージは65%になる',s=>{s.multishot=2;}],
-     ['背','背水の陣','HP50%以下のとき、与えるダメージ+25%',s=>{s.berserk=true;}]],
- mag:[['魔','魔力強化I','魔法ダメージ+15%',s=>{s.magicMul+=.15;}],['魔','魔力強化II','魔法ダメージ+15%',s=>{s.magicMul+=.15;}],['詠','詠唱短縮','全スキルのクールタイム-10%',s=>{s.cdMul*=.9;}],
-     ['導','魔導の心得','魔法ダメージ+20%',s=>{s.magicMul+=.2;}],['奥','奥義の心得','特殊スキルのクールタイム-20%',s=>{s.spCd*=.8;}],
-     ['極','魔導の極み','魔法ダメージ+25%',s=>{s.magicMul+=.25;}],['秘','奥義の極み','特殊スキルのクールタイム-15%',s=>{s.spCd*=.85;}],
-     ['環','魔力循環','スキルを使うたびにHP+3',s=>{s.regen+=3;}]],
- spd:[['足','俊足I','移動速度+6%',s=>{s.spd*=1.06;}],['足','俊足II','移動速度+6%',s=>{s.spd*=1.06;}],['軽','身軽','移動スキルのクールタイム-25%',s=>{s.moveCd*=.75;}],
-     ['連','連射','通常攻撃の速度+20%',s=>{s.atkRate/=1.2;}],['瞬','瞬発','移動スキルのクールタイム-15%',s=>{s.moveCd*=.85;}],
-     ['速','速射','通常攻撃の速度+15%',s=>{s.atkRate/=1.15;}],['風','疾駆','移動速度+8%',s=>{s.spd*=1.08;}],
-     ['見','見切り','10%の確率で攻撃を見切ってダメージを受けない',s=>{s.dodge=.1;}]],
- gold:[['金','金運I','獲得ゴールド+15%',s=>{s.goldMul+=.15;}],['金','金運II','獲得ゴールド+15%',s=>{s.goldMul+=.15;}],['値','値切り','ガチャの価格-10%',s=>{s.disc+=.1;}],
-     ['運','豪運','獲得ゴールド+25%',s=>{s.goldMul+=.25;}],['研','研鑽','勝利時の獲得SP+1',s=>{s.spBonus+=1;}],
-     ['財','財宝の加護','獲得ゴールド+25%',s=>{s.goldMul+=.25;}],['商','大値切り','ガチャの価格-10%',s=>{s.disc+=.1;}],
-     ['富','大富豪','獲得ゴールド+50%',s=>{s.goldMul+=.5;}]],
- tec:[['狩','狩人の心得','召喚体（ゴーレム・分身）へのダメージ+50%',s=>{s.minionDmg+=.5;}],['眼','鷹の目','会心率+5%',s=>{s.crit+=.05;}],['王','魔王狩り','第二形態のボスへのダメージ+20%',s=>{s.p2Dmg+=.2;}],
-     ['牙','吸血の牙','与えたダメージの2%だけHPが回復する',s=>{s.lifesteal+=.02;}],['射','狙撃手','会心率+5%',s=>{s.crit+=.05;}],
-     ['糧','討伐の糧','召喚体を倒すとHPが8回復する',s=>{s.killHeal+=8;}],['貫','貫く魔弾','通常攻撃が敵を貫通する',s=>{s.pierceBasic=true;}],
-     ['覇','覇者の風格','与えるダメージすべて+10%',s=>{s.allDmg*=1.1;}]],
+ hp:[['体','体力強化I','最大HP+12',s=>{s.maxHp+=12;}],['体','体力強化II','最大HP+12',s=>{s.maxHp+=12;}],['泉','生命の泉','毎秒HPが0.25回復する',s=>{s.regenPs+=.25;}],
+     ['壁','鉄壁','受けるダメージ-8%',s=>{s.dmgTaken*=.92;}],['活','活力','最大HP+20',s=>{s.maxHp+=20;}],
+     ['堅','堅牢','受けるダメージ-6%',s=>{s.dmgTaken*=.94;}],['盾','開幕の盾','戦闘開始時、24ダメージを防ぐバリアを張る（12秒）',s=>{s.startShield+=24;}],
+     ['魂','不屈','1戦に1度、HPが0になってもHP25%で復活する',s=>{s.revive=true;}]],
+ atk:[['力','攻撃強化I','ATK+1.6',s=>{s.atk+=1.6;}],['力','攻撃強化II','ATK+1.6',s=>{s.atk+=1.6;}],['剣','剣豪','物理ダメージ+16%（通常攻撃・攻撃スキル・移動スキルの攻撃）',s=>{s.physMul+=.16;}],
+     ['会','会心の心得','会心率+6%',s=>{s.crit+=.06;}],['追','追撃','通常攻撃のダメージ+24%',s=>{s.basicMul+=.24;}],
+     ['極','会心の極意','会心ダメージが2倍から2.45倍になる',s=>{s.critMul=Math.max(s.critMul,2.45);}],['双','多重射撃','通常攻撃が2発同時に出る。ただし1発のダメージは60%になる',s=>{s.multishot=2;}],
+     ['背','背水の陣','HP50%以下のとき、与えるダメージ+20%',s=>{s.berserk=true;}]],
+ mag:[['魔','魔力強化I','魔法ダメージ+12%',s=>{s.magicMul+=.12;}],['魔','魔力強化II','魔法ダメージ+12%',s=>{s.magicMul+=.12;}],['詠','詠唱短縮','全スキルのクールタイム-8%',s=>{s.cdMul*=.92;}],
+     ['導','魔導の心得','魔法ダメージ+16%',s=>{s.magicMul+=.16;}],['奥','奥義の心得','特殊スキルのクールタイム-16%',s=>{s.spCd*=.84;}],
+     ['極','魔導の極み','魔法ダメージ+20%',s=>{s.magicMul+=.2;}],['秘','奥義の極み','特殊スキルのクールタイム-12%',s=>{s.spCd*=.88;}],
+     ['環','魔力循環','スキルを使うたびにHP+1',s=>{s.regen+=1;}]],
+ spd:[['足','俊足I','移動速度+5%',s=>{s.spd*=1.05;}],['足','俊足II','移動速度+5%',s=>{s.spd*=1.05;}],['軽','身軽','移動スキルのクールタイム-20%',s=>{s.moveCd*=.8;}],
+     ['連','連射','通常攻撃の速度+16%',s=>{s.atkRate/=1.16;}],['瞬','瞬発','移動スキルのクールタイム-12%',s=>{s.moveCd*=.88;}],
+     ['速','速射','通常攻撃の速度+12%',s=>{s.atkRate/=1.12;}],['風','疾駆','移動速度+6%',s=>{s.spd*=1.06;}],
+     ['見','見切り','8%の確率で攻撃を見切ってダメージを受けない',s=>{s.dodge=.08;}]],
+ gold:[['金','金運I','獲得ゴールド+12%',s=>{s.goldMul+=.12;}],['金','金運II','獲得ゴールド+12%',s=>{s.goldMul+=.12;}],['値','値切り','ガチャの価格-8%',s=>{s.disc+=.08;}],
+     ['運','豪運','獲得ゴールド+20%',s=>{s.goldMul+=.2;}],['研','研鑽','勝利時の獲得SP+1',s=>{s.spBonus+=1;}],
+     ['財','財宝の加護','獲得ゴールド+20%',s=>{s.goldMul+=.2;}],['商','大値切り','ガチャの価格-8%',s=>{s.disc+=.08;}],
+     ['富','大富豪','獲得ゴールド+40%',s=>{s.goldMul+=.4;}]],
+ tec:[['狩','狩人の心得','召喚体（ゴーレム・分身）へのダメージ+40%',s=>{s.minionDmg+=.4;}],['眼','鷹の目','会心率+4%',s=>{s.crit+=.04;}],['王','魔王狩り','第二形態のボスへのダメージ+16%',s=>{s.p2Dmg+=.16;}],
+     ['牙','吸血の牙','与えたダメージの0.8%だけHPが回復する',s=>{s.lifesteal+=.008;}],['射','狙撃手','会心率+4%',s=>{s.crit+=.04;}],
+     ['糧','討伐の糧','召喚体を倒すとHPが3回復する',s=>{s.killHeal+=3;}],['貫','貫く魔弾','通常攻撃が敵を貫通する',s=>{s.pierceBasic=true;}],
+     ['覇','覇者の風格','与えるダメージすべて+8%',s=>{s.allDmg*=1.08;}]],
 };
 const BRIDGE=[
- ['闘','闘気','最大HP+10、ATK+1',s=>{s.maxHp+=10;s.atk+=1;}],
- ['刃','魔剣','物理ダメージ+10%、魔法ダメージ+10%',s=>{s.physMul+=.1;s.magicMul+=.1;}],
- ['迅','迅速詠唱','全スキルのクールタイム-5%、移動速度+4%',s=>{s.cdMul*=.95;s.spd*=1.04;}],
- ['逃','逃げ足','移動速度+5%、獲得ゴールド+10%',s=>{s.spd*=1.05;s.goldMul+=.1;}],
- ['目','目利き','ガチャの価格-5%、会心率+3%',s=>{s.disc+=.05;s.crit+=.03;}],
- ['備','狩人の備え','最大HP+15、召喚体へのダメージ+25%',s=>{s.maxHp+=15;s.minionDmg+=.25;}],
+ ['闘','闘気','最大HP+8、ATK+0.8',s=>{s.maxHp+=8;s.atk+=.8;}],
+ ['刃','魔剣','物理ダメージ+8%、魔法ダメージ+8%',s=>{s.physMul+=.08;s.magicMul+=.08;}],
+ ['迅','迅速詠唱','全スキルのクールタイム-4%、移動速度+3%',s=>{s.cdMul*=.96;s.spd*=1.03;}],
+ ['逃','逃げ足','移動速度+4%、獲得ゴールド+8%',s=>{s.spd*=1.04;s.goldMul+=.08;}],
+ ['目','目利き','ガチャの価格-4%、会心率+2%',s=>{s.disc+=.04;s.crit+=.02;}],
+ ['備','狩人の備え','最大HP+12、召喚体へのダメージ+20%',s=>{s.maxHp+=12;s.minionDmg+=.2;}],
 ];
 const TYPE_NAME={root:'起点',minor:'小ノード',notable:'大ノード',key:'キーストーン',bridge:'連結ノード',chest:'宝箱マス',master:'極ノード',altar:'祭壇マス',rand:'運命マス',curse:'呪いマス',warp:'星門マス',legend:'秘宝マス',crest:'証マス',ssp:'宝珠マス',pv:'奥義',pvkey:'極奥義'};
 function polar(a,r){const t=a*Math.PI/180;return{x:TC+Math.cos(t)*r,y:TC+Math.sin(t)*r};}
-const TREE=[Object.assign({id:'core',type:'root',icon:'心',name:'冒険者の心得',desc:'最大HP+10、ATK+1。ここから6つの道が始まる。',cost:0,col:'#f6c152',fx:s=>{s.maxHp+=10;s.atk+=1;}},polar(0,0))];
+const TREE=[Object.assign({id:'core',type:'root',icon:'心',name:'冒険者の心得',desc:'最大HP+8、ATK+0.8。ここから6つの道が始まる。',cost:0,col:'#f6c152',fx:s=>{s.maxHp+=8;s.atk+=.8;}},polar(0,0))];
 const EDGES=[];
 BR.forEach(br=>{const d=TD[br.id];
   const mk=(k,idx,type,a,r,cost,gate)=>{const [icon,name,desc,fx]=d[idx];TREE.push(Object.assign({id:br.id+'_'+k,br:br.id,col:br.col,type,icon,name,desc,fx,cost,gate},polar(a,r)));return br.id+'_'+k;};
@@ -1016,15 +1021,15 @@ BR.forEach((br,i)=>{const nx=BR[(i+1)%BR.length];const [icon,name,desc,fx]=BRIDG
   TREE.push(Object.assign({id,type:'bridge',br:'bridge',col:'#e9dfc4',icon,name,desc:desc+'（'+br.name+'と'+nx.name+'をつなぐ）',fx,cost:2,gate:3},polar(br.a+30,262)));
   EDGES.push([br.id+'_3',id],[id,nx.id+'_3']);});
 // ---- 特殊なマス：系統の間の外側に並ぶ ----
-const RAND_POOL=[['最大HP+30',s=>{s.maxHp+=30;}],['ATK+3',s=>{s.atk+=3;}],['会心率+8%',s=>{s.crit+=.08;}],['全スキルのクールタイム-8%',s=>{s.cdMul*=.92;}],['移動速度+8%',s=>{s.spd*=1.08;}],
- ['獲得ゴールド+30%',s=>{s.goldMul+=.3;}],['魔法ダメージ+25%',s=>{s.magicMul+=.25;}],['物理ダメージ+20%',s=>{s.physMul+=.2;}],['受けるダメージ-8%',s=>{s.dmgTaken*=.92;}],['通常攻撃の速度+15%',s=>{s.atkRate/=1.15;}]];
+const RAND_POOL=[['最大HP+24',s=>{s.maxHp+=24;}],['ATK+2.4',s=>{s.atk+=2.4;}],['会心率+6%',s=>{s.crit+=.06;}],['全スキルのクールタイム-6%',s=>{s.cdMul*=.94;}],['移動速度+6%',s=>{s.spd*=1.06;}],
+ ['獲得ゴールド+24%',s=>{s.goldMul+=.24;}],['魔法ダメージ+20%',s=>{s.magicMul+=.2;}],['物理ダメージ+16%',s=>{s.physMul+=.16;}],['受けるダメージ-6%',s=>{s.dmgTaken*=.94;}],['通常攻撃の速度+12%',s=>{s.atkRate/=1.12;}]];
 const SPECIAL=[
- {type:'curse',col:'#ff3b5c',icon:'契',name:'血の契約',desc:'【呪い】与えるダメージ+20%。そのかわり最大HP-20%。',cost:3,fx:s=>{s.allDmg*=1.2;s.maxHpMul*=.8;}},
- {type:'warp',col:'#9a7bff',icon:'門',name:'星門・東',desc:'【星門】反対側にある「星門・西」とつながる近道。移動速度+5%。',cost:2,fx:s=>{s.spd*=1.05;}},
- {type:'legend',col:'#ffd36b',icon:'賢',name:'賢者の石',desc:'【秘宝】全スキルのクールタイム-10%。',cost:5,fx:s=>{s.cdMul*=.9;}},
- {type:'curse',col:'#ff3b5c',icon:'狂',name:'狂戦士の呪い',desc:'【呪い】通常攻撃の速度+25%。そのかわり受けるダメージ+15%。',cost:3,fx:s=>{s.atkRate/=1.25;s.dmgTaken*=1.15;}},
- {type:'warp',col:'#9a7bff',icon:'門',name:'星門・西',desc:'【星門】反対側にある「星門・東」とつながる近道。会心率+5%。',cost:2,fx:s=>{s.crit+=.05;}},
- {type:'crest',col:'#ffe6a0',icon:'王',name:'王者の証',desc:'【証】魔王を5体以上討伐すると解放できる。ATK+15%、最大HP+15%、移動速度+5%。',cost:4,clears:5,fx:s=>{s.atk*=1.15;s.maxHpMul*=1.15;s.spd*=1.05;}},
+ {type:'curse',col:'#ff3b5c',icon:'契',name:'血の契約',desc:'【呪い】与えるダメージ+16%。そのかわり最大HP-20%。',cost:3,fx:s=>{s.allDmg*=1.16;s.maxHpMul*=.8;}},
+ {type:'warp',col:'#9a7bff',icon:'門',name:'星門・東',desc:'【星門】反対側にある「星門・西」とつながる近道。移動速度+4%。',cost:2,fx:s=>{s.spd*=1.04;}},
+ {type:'legend',col:'#ffd36b',icon:'賢',name:'賢者の石',desc:'【秘宝】全スキルのクールタイム-8%。',cost:5,fx:s=>{s.cdMul*=.92;}},
+ {type:'curse',col:'#ff3b5c',icon:'狂',name:'狂戦士の呪い',desc:'【呪い】通常攻撃の速度+20%。そのかわり受けるダメージ+15%。',cost:3,fx:s=>{s.atkRate/=1.2;s.dmgTaken*=1.15;}},
+ {type:'warp',col:'#9a7bff',icon:'門',name:'星門・西',desc:'【星門】反対側にある「星門・東」とつながる近道。会心率+4%。',cost:2,fx:s=>{s.crit+=.04;}},
+ {type:'crest',col:'#ffe6a0',icon:'王',name:'王者の証',desc:'【証】魔王を5体以上討伐すると解放できる。ATK+12%、最大HP+12%、移動速度+4%。',cost:4,clears:5,fx:s=>{s.atk*=1.12;s.maxHpMul*=1.12;s.spd*=1.04;}},
 ];
 BR.forEach((br,i)=>{const nx=BR[(i+1)%BR.length];const mid='sx_'+i,out='sp_'+i;
   if(i%2===0)TREE.push(Object.assign({id:mid,type:'chest',br:'special',col:'#f6a93a',icon:'宝',name:'宝箱',desc:'【宝箱】解放すると、このセーブで一度だけ400Gと未所持スキル1つが手に入る（未所持がなければ800G）。',cost:2,gate:3,fx:()=>{}},polar(br.a+30,340)));
@@ -1034,18 +1039,18 @@ BR.forEach((br,i)=>{const nx=BR[(i+1)%BR.length];const mid='sx_'+i,out='sp_'+i;
 EDGES.push(['sp_1','sp_4','warp']);
 // ---- 外周：各系統の先に続く「極」の道と、通常攻撃を強化する祭壇 ----
 const TD2={
- hp:[['命','生命力','最大HP+20',s=>{s.maxHp+=20;}],['癒','自然治癒','毎秒HPが0.4回復する',s=>{s.regenPs+=.4;}],['鎧','重鎧','受けるダメージ-6%',s=>{s.dmgTaken*=.94;}],['滅','極・不滅','最大HP+15%',s=>{s.maxHpMul*=1.15;}]],
- atk:[['剛','剛力','ATK+3',s=>{s.atk+=3;}],['烈','烈撃','会心ダメージ+0.4倍',s=>{s.critMul+=.4;}],['鉄','斬鉄','物理ダメージ+15%',s=>{s.physMul+=.15;}],['聖','極・剣聖','通常攻撃のダメージ+25%',s=>{s.basicMul+=.25;}]],
- mag:[['導','魔導','魔法ダメージ+15%',s=>{s.magicMul+=.15;}],['唱','高速詠唱','全スキルのクールタイム-6%',s=>{s.cdMul*=.94;}],['儀','秘儀','特殊スキルのクールタイム-10%',s=>{s.spCd*=.9;}],['賢','極・大賢者','魔法ダメージ+30%',s=>{s.magicMul+=.3;}]],
- spd:[['脚','健脚','移動速度+5%',s=>{s.spd*=1.05;}],['乱','乱射','通常攻撃の速度+12%',s=>{s.atkRate/=1.12;}],['走','影走り','移動スキルのクールタイム-15%',s=>{s.moveCd*=.85;}],['神','極・神速','攻撃ボタンを押している間の移動速度低下がなくなる（×0.8→×1.0）',s=>{s.holdSpd=1;}]],
- gold:[['脈','金脈','獲得ゴールド+20%',s=>{s.goldMul+=.2;}],['客','上客','ガチャの価格-5%',s=>{s.disc+=.05;}],['修','修練','勝利時の獲得SP+1',s=>{s.spBonus+=1;}],['律','極・黄金律','獲得ゴールド+50%。ガチャのレジェンド排出率が1.5倍',s=>{s.goldMul+=.5;s.legendBoost=1.5;}]],
- tec:[['猟','狩猟','召喚体へのダメージ+30%',s=>{s.minionDmg+=.3;}],['殺','王殺し','第二形態のボスへのダメージ+15%',s=>{s.p2Dmg+=.15;}],['血','血牙','与えたダメージの1.5%だけHPが回復する',s=>{s.lifesteal+=.015;}],['覇','極・覇王','与えるダメージすべて+12%',s=>{s.allDmg*=1.12;}]],
+ hp:[['命','生命力','最大HP+16',s=>{s.maxHp+=16;}],['癒','自然治癒','毎秒HPが0.15回復する',s=>{s.regenPs+=.15;}],['鎧','重鎧','受けるダメージ-5%',s=>{s.dmgTaken*=.95;}],['滅','極・不滅','最大HP+12%',s=>{s.maxHpMul*=1.12;}]],
+ atk:[['剛','剛力','ATK+2.4',s=>{s.atk+=2.4;}],['烈','烈撃','会心ダメージ+0.3倍',s=>{s.critMul+=.3;}],['鉄','斬鉄','物理ダメージ+12%',s=>{s.physMul+=.12;}],['聖','極・剣聖','通常攻撃のダメージ+20%',s=>{s.basicMul+=.2;}]],
+ mag:[['導','魔導','魔法ダメージ+12%',s=>{s.magicMul+=.12;}],['唱','高速詠唱','全スキルのクールタイム-5%',s=>{s.cdMul*=.95;}],['儀','秘儀','特殊スキルのクールタイム-8%',s=>{s.spCd*=.92;}],['賢','極・大賢者','魔法ダメージ+24%',s=>{s.magicMul+=.24;}]],
+ spd:[['脚','健脚','移動速度+4%',s=>{s.spd*=1.04;}],['乱','乱射','通常攻撃の速度+10%',s=>{s.atkRate/=1.1;}],['走','影走り','移動スキルのクールタイム-12%',s=>{s.moveCd*=.88;}],['神','極・神速','攻撃ボタンを押している間の移動速度低下が小さくなる（×0.8→×0.95）',s=>{s.holdSpd=.95;}]],
+ gold:[['脈','金脈','獲得ゴールド+16%',s=>{s.goldMul+=.16;}],['客','上客','ガチャの価格-4%',s=>{s.disc+=.04;}],['修','修練','勝利時の獲得SP+1',s=>{s.spBonus+=1;}],['律','極・黄金律','獲得ゴールド+40%。ガチャのレジェンド排出率が1.4倍',s=>{s.goldMul+=.4;s.legendBoost=1.4;}]],
+ tec:[['猟','狩猟','召喚体へのダメージ+24%',s=>{s.minionDmg+=.24;}],['殺','王殺し','第二形態のボスへのダメージ+12%',s=>{s.p2Dmg+=.12;}],['血','血牙','与えたダメージの0.6%だけHPが回復する',s=>{s.lifesteal+=.006;}],['覇','極・覇王','与えるダメージすべて+10%',s=>{s.allDmg*=1.1;}]],
 };
 BR.forEach(br=>{const d=TD2[br.id];const mk=(k,idx,type,a,r,cost,gate)=>{const [icon,name,desc,fx]=d[idx];const id=br.id+'_'+k;TREE.push(Object.assign({id,br:br.id,col:br.col,type,icon,name,desc,fx,cost,gate},polar(a,r)));return id;};
   const e1=mk('e1',0,'minor',br.a,RAD[7],3,18),e2l=mk('e2l',1,'minor',br.a-7,RAD[8],3,22),e2r=mk('e2r',2,'minor',br.a+7,RAD[8],3,22),e3=mk('e3',3,'master',br.a,RAD[9],5,30);
   EDGES.push([br.id+'_k',e1],[e1,e2l],[e1,e2r],[e2l,e3],[e2r,e3]);});
-const ALTAR=[['鍛','鍛冶の祭壇','通常攻撃のダメージ+12%',s=>{s.basicMul+=.12;}],['連','連撃の祭壇','通常攻撃の速度+12%',s=>{s.atkRate/=1.12;}],['鋭','鋭刃の祭壇','通常攻撃の会心率+12%',s=>{s.basicCrit+=.12;}],
- ['渇','渇血の祭壇','通常攻撃で与えたダメージの2%だけHPが回復する',s=>{s.basicSteal+=.02;}],['刻','刻印の祭壇','通常攻撃が当たるたびに、全スキルのクールタイムが0.015秒縮む',s=>{s.basicCdr+=.015;}],['鳴','共鳴の祭壇','チャージ（星詠みの杖）と砲身回転（機神ガトリング）の速さ+35%',s=>{s.baSpeed*=1.35;}]];
+const ALTAR=[['鍛','鍛冶の祭壇','通常攻撃のダメージ+10%',s=>{s.basicMul+=.1;}],['連','連撃の祭壇','通常攻撃の速度+10%',s=>{s.atkRate/=1.1;}],['鋭','鋭刃の祭壇','通常攻撃の会心率+10%',s=>{s.basicCrit+=.1;}],
+ ['渇','渇血の祭壇','通常攻撃で与えたダメージの0.8%だけHPが回復する',s=>{s.basicSteal+=.008;}],['刻','刻印の祭壇','通常攻撃が当たるたびに、全スキルのクールタイムが0.012秒縮む',s=>{s.basicCdr+=.012;}],['鳴','共鳴の祭壇','チャージ（星詠みの杖）と砲身回転（機神ガトリング）の速さ+28%',s=>{s.baSpeed*=1.28;}]];
 BR.forEach((br,i)=>{const [icon,name,desc,fx]=ALTAR[i];const id='al_'+i;TREE.push(Object.assign({id,type:'altar',br:'special',col:'#ff9ad8',icon,name,desc:'【祭壇】'+desc,cost:3,gate:15,fx},polar(br.a+30,575)));EDGES.push(['sp_'+i,id]);});
 const SSP_DESC='【宝珠】解放すると特殊スキルポイントを1枚獲得する（1回だけ）。SPを振り直してもこのマスはそのまま残る。';
 BR.forEach((br,i)=>{const id='ss_'+i;TREE.push(Object.assign({id,type:'ssp',br:'special',col:'#ff9ad8',icon:'珠',name:'奥義の宝珠',desc:SSP_DESC,cost:3,gate:20,fx:()=>{}},polar(br.a+30,660)));EDGES.push(['al_'+i,id]);
@@ -1056,13 +1061,13 @@ if(!S.rand)S.rand={};if(!S.chest)S.chest={};
 const BR2=[{id:'p_atk',name:'攻',col:'#ff6b6b',a:-90},{id:'p_tec',name:'技',col:'#c783ff',a:0},{id:'p_def',name:'守',col:'#5fe3a1',a:90},{id:'p_odd',name:'奇',col:'#f6c152',a:180}];
 const RAD2=[0,150,290,420,560];
 const PVD={
- p_atk:[['追','追撃の刃','通常攻撃が5回当たるたびに、追い打ちの斬撃が出る（ATK×2）。','chase'],['鎖','会心連鎖','会心が出ると、近くの別の敵に雷が飛び移る（ATK×1・0.5秒に1回まで）。','chain'],['処','処刑人','HPが30%以下の敵に与えるダメージ+30%。','exec'],['雷','雷の加護','6秒ごとに、狙っている敵へ自動で雷が落ちる（ATK×4）。','thunder'],['覇','覇王の一撃','【極奥義】10秒ごとに力が満ちる。満ちた状態で移動以外のスキルを使うと、そのあと1.6秒間、スキルのダメージが2.5倍になる。','hao']],
- p_tec:[['環','魔力回路','スキルを使うたびに、ほかのスキルのクールタイムが1秒縮む。','circuit'],['残','残像','移動スキルを使うと元いた場所に残像が残り、0.6秒後に爆発する（範囲2.5m・ATK×3）。','afterimg'],['唱','連続詠唱','スキルを使ったとき、15%の確率でクールタイムが発生しない。','echo'],['星','星の衛星','小さな星が周りを回り、1.2秒ごとに敵へ追尾弾を撃つ（ATK×1）。','star'],['奥','奥義覚醒','【極奥義】特殊スキルを使うと、移動・攻撃・魔法のクールタイムがすべて回復し、5秒間与えるダメージ+30%。','ougi']],
- p_def:[['鉄','鉄の意志','15秒ごとに、20ダメージを防ぐ障壁を張る。','ironwill'],['棘','反撃の棘','ダメージを受けると、周りに8本の棘を放つ（1本ATK×0.8・2秒に1回まで）。','thorn'],['鼓','生命の鼓動','HPが40%以下の間、毎秒HPが2回復する。','pulse'],['護','聖なる加護','25秒ごとに加護が宿り、次に受ける攻撃（継続ダメージ以外）を1回だけ無効にする。','guard'],['心','不滅の心臓','【極奥義】1戦に1度、HPが25%を下回った瞬間にHP70%まで回復し、40ダメージを防ぐ障壁を張る。','heart']],
- p_odd:[['幸','幸運の星','獲得ゴールド+20%、会心率+3%。','luck'],['毒','毒の刃','攻撃が当たると、10%の確率で敵が2秒間燃える。','venom'],['砂','時の砂','ボスが形態を変えたとき、すべてのクールタイムが回復し、HPが20%回復する。','sand'],['偶','身代わり人形','20秒に1回、当たりそうになった敵弾を人形が受け止め、ボスへ跳ね返す（ATK×3）。','doll'],['賽','運命の賽','【極奥義】12秒ごとに運命の賽を振る。覚醒4秒・HP15%回復・CT回復・落雷（ATK×8）・障壁30のどれかが起きる。','fate']]};
+ p_atk:[['追','追撃の刃','通常攻撃が5回当たるたびに、追い打ちの斬撃が出る（ATK×1.6）。','chase'],['鎖','会心連鎖','会心が出ると、近くの別の敵に雷が飛び移る（ATK×0.8・0.5秒に1回まで）。','chain'],['処','処刑人','HPが30%以下の敵に与えるダメージ+25%。','exec'],['雷','雷の加護','6秒ごとに、狙っている敵へ自動で雷が落ちる（ATK×3.2）。','thunder'],['覇','覇王の一撃','【極奥義】10秒ごとに力が満ちる。満ちた状態で移動以外のスキルを使うと、そのあと1.6秒間、スキルのダメージが2.2倍になる。','hao']],
+ p_tec:[['環','魔力回路','スキルを使うたびに、ほかのスキルのクールタイムが0.8秒縮む。','circuit'],['残','残像','移動スキルを使うと元いた場所に残像が残り、0.6秒後に爆発する（範囲2.5m・ATK×2.5）。','afterimg'],['唱','連続詠唱','スキルを使ったとき、12%の確率でクールタイムが発生しない。','echo'],['星','星の衛星','小さな星が周りを回り、1.2秒ごとに敵へ追尾弾を撃つ（ATK×0.8）。','star'],['奥','奥義覚醒','【極奥義】特殊スキルを使うと、移動・攻撃・魔法のクールタイムがすべて回復し、5秒間与えるダメージ+25%。','ougi']],
+ p_def:[['鉄','鉄の意志','15秒ごとに、16ダメージを防ぐ障壁を張る。','ironwill'],['棘','反撃の棘','ダメージを受けると、周りに8本の棘を放つ（1本ATK×0.65・2秒に1回まで）。','thorn'],['鼓','生命の鼓動','HPが40%以下の間、毎秒HPが0.8回復する。','pulse'],['護','聖なる加護','28秒ごとに加護が宿り、次に受ける攻撃（継続ダメージ以外）を1回だけ無効にする。','guard'],['心','不滅の心臓','【極奥義】1戦に1度、HPが25%を下回った瞬間にHP40%まで回復し、30ダメージを防ぐ障壁を張る。','heart']],
+ p_odd:[['幸','幸運の星','獲得ゴールド+16%、会心率+2%。','luck'],['毒','毒の刃','攻撃が当たると、8%の確率で敵が2秒間燃える。','venom'],['砂','時の砂','ボスが形態を変えたとき、すべてのクールタイムが回復し、HPが8%回復する。','sand'],['偶','身代わり人形','22秒に1回、当たりそうになった敵弾を人形が受け止め、ボスへ跳ね返す（ATK×2.5）。','doll'],['賽','運命の賽','【極奥義】12秒ごとに運命の賽を振る。覚醒3.5秒・HP6%回復・CT回復・落雷（ATK×6.5）・障壁24のどれかが起きる。','fate']]};
 const TREE2=[Object.assign({id:'core2',t2:true,type:'root',icon:'奥',name:'奥義の心得',desc:'ここから特殊スキルポイントで「奥義」（戦闘中ずっと働く特殊な技）を習得する。特殊スキルポイントはスキルツリーの「奥義の宝珠」マスや、メダル交換で手に入る。',cost:0,col:'#ff9ad8',fx:()=>{}},polar(0,0))];
 const EDGES2=[];
-BR2.forEach(br=>{const d=PVD[br.id];const mk=(k,idx,type,a,r,cost)=>{const [icon,name,desc,key]=d[idx];const id='v2_'+br.id+'_'+k;TREE2.push(Object.assign({id,t2:true,br:br.id,col:br.col,type,icon,name,desc,cost,fx:s=>{s.pv[key]=true;if(key==='luck'){s.goldMul+=.2;s.crit+=.03;}}},polar(a,r)));return id;};
+BR2.forEach(br=>{const d=PVD[br.id];const mk=(k,idx,type,a,r,cost)=>{const [icon,name,desc,key]=d[idx];const id='v2_'+br.id+'_'+k;TREE2.push(Object.assign({id,t2:true,br:br.id,col:br.col,type,icon,name,desc,cost,fx:s=>{s.pv[key]=true;if(key==='luck'){s.goldMul+=.16;s.crit+=.02;}}},polar(a,r)));return id;};
   const n1=mk('1',0,'pv',br.a,RAD2[1],1),l=mk('2l',1,'pv',br.a-16,RAD2[2],1),r=mk('2r',2,'pv',br.a+16,RAD2[2],1),n3=mk('3',3,'pv',br.a,RAD2[3],1),k=mk('k',4,'pvkey',br.a,RAD2[4],3);
   EDGES2.push(['core2',n1],[n1,l],[n1,r],[l,n3],[r,n3],[n3,k]);});
 const TREE2_BY={};TREE2.forEach(n=>TREE2_BY[n.id]=n);
@@ -2107,7 +2112,7 @@ function updEproj(dt){
     if(!dead&&!G.over){
       if(p.prox&&Math.hypot(P.x-p.x,P.z-p.z)<p.prox)dead=true;
       else if((P.phaseT>0&&Math.hypot(P.x-p.x,P.z-p.z)<1.3)||(P.mirrorT>0&&Math.hypot(P.x-p.x,P.z-p.z)<1.7)){p.onEnd=null;dead=true;burst(p.x,1.1,p.z,0xe0f4ff,5,4,.3);if(P.mirrorT>0&&B&&B.hp>0){const a=Math.atan2(B.z-p.z,B.x-p.x);const q=pshot(a,24,{dmg:2,r:.3,color:0xe0f4ff,stretch:2});q.x=p.x;q.z=p.z;}}
-      else if(p.dmg&&P.st.pv&&P.st.pv.doll&&!(P.dollT>0)&&segDist(ox,oz,p.x,p.z,P.x,P.z)<p.r+.35){P.dollT=20;p.onEnd=null;dead=true;floatText(P.x,2.4,P.z,'身代わり','heal');burst(P.x,1.2,P.z,0xffe38a,10,4,.4);if(B&&B.hp>0){const a=Math.atan2(B.z-p.z,B.x-p.x);const q=pshot(a,22,{dmg:3,r:.35,color:0xffe38a,stretch:2,extra:{pvx:1}});q.x=p.x;q.z=p.z;}}
+      else if(p.dmg&&P.st.pv&&P.st.pv.doll&&!(P.dollT>0)&&segDist(ox,oz,p.x,p.z,P.x,P.z)<p.r+.35){P.dollT=22;p.onEnd=null;dead=true;floatText(P.x,2.4,P.z,'身代わり','heal');burst(P.x,1.2,P.z,0xffe38a,10,4,.4);if(B&&B.hp>0){const a=Math.atan2(B.z-p.z,B.x-p.x);const q=pshot(a,22,{dmg:2.5,r:.35,color:0xffe38a,stretch:2,extra:{pvx:1}});q.x=p.x;q.z=p.z;}}
       else if(segDist(ox,oz,p.x,p.z,P.x,P.z)<p.r+.35){if(p.dmg)dmgPlayer(p.dmg);if(p.slow)P.slowT=Math.max(P.slowT,p.slow);if(p.root)rootP(p.root);if(p.venom)P.venomT=Math.max(P.venomT||0,p.venom);if(p.onHit){const f=p.onHit;p.onEnd=null;f(p);}dead=true;}
       else if(swordBlock(p)){p.onEnd=null;dead=true;burst(p.x,1.1,p.z,0xdfe8ff,5,4,.3);}
     }
@@ -2233,14 +2238,14 @@ function updPproj(dt){for(let i=G.pproj.length-1;i>=0;i--){const p=G.pproj[i];co
   if(!dead)for(const e of enemies()){if(p.hit.has(e))continue;if(segDist(ox,oz,p.x,p.z,e.x,e.z)<p.r+e.r){p.hit.add(e);if(e.isBoss&&e.reflectT>0){dead=true;const a=Math.atan2(P.z-p.z,P.x-p.x);eshot(p.x,p.z,a,16,{dmg:6,r:.25,color:0xe8f4ff,stretch:2});break;}if(p.dmg>0)hitEnemy(e,p.dmg*(p.distScale?1+Math.min(1.5,p.trav/8):1),p.kind,p.extra);if(p.onHitE)p.onHitE(e,p);if(!p.pierce){dead=true;break;}}}
   if(dead){G.pproj.splice(i,1);scene.remove(p.mesh);if(p.onEnd)p.onEnd(p);continue;}
   p.mesh.position.set(p.x,1.1,p.z);if(!p.ret)p.mesh.rotation.y=-Math.atan2(p.vz,p.vx);}}
-function hitEnemy(e,mult,kind,xx){if(!G||G.over||e.hp<=0)return;xx=xx||{};const st=P.st;let d=st.atk*mult;if(kind==='magic')d*=st.magicMul;else d*=st.physMul;d*=st.allDmg;if(e.isBoss&&e.p2)d*=1+st.p2Dmg;if(!e.isBoss)d*=1+st.minionDmg;if(P.awakenT>0)d*=1.8;if(st.berserk&&P.hp<P.maxHp*.5)d*=1.25;const PV=st.pv||{};if(PV.exec&&e.hp<e.maxHp*.3)d*=1.3;if(P.haoWin>0&&!xx.basic&&!xx.pvx)d*=2.5;if(P.ougiT>0)d*=1.3;if(P.clockT>0)d*=1.2;if(e.curseT>0)d*=1.2;
+function hitEnemy(e,mult,kind,xx){if(!G||G.over||e.hp<=0)return;xx=xx||{};const st=P.st;let d=st.atk*mult;if(kind==='magic')d*=st.magicMul;else d*=st.physMul;d*=st.allDmg;if(e.isBoss&&e.p2)d*=1+st.p2Dmg;if(!e.isBoss)d*=1+st.minionDmg;if(P.awakenT>0)d*=1.8;if(st.berserk&&P.hp<P.maxHp*.5)d*=1.2;const PV=st.pv||{};if(PV.exec&&e.hp<e.maxHp*.3)d*=1.25;if(P.haoWin>0&&!xx.basic&&!xx.pvx)d*=2.2;if(P.ougiT>0)d*=1.25;if(P.clockT>0)d*=1.2;if(e.curseT>0)d*=1.2;
   const crit=Math.random()<st.crit+(P.focusT>0?.4:0)+(xx.crit||0)+(xx.basic?st.basicCrit:0);if(P.odT>0)d*=1.5;if(crit)d*=st.critMul;d=Math.max(1,Math.round(d*rnd(.92,1.08)));e.hp-=d;if(e.isBoss)G.dealt+=d;
-  if(!xx.pvx&&!G.over){if(xx.basic&&PV.chase){P.pvN=(P.pvN||0)+1;if(P.pvN%5===0)later(.05,()=>{if(e.hp>0&&!G.over){hitEnemy(e,2,'phys',{pvx:1});sectorFx(e.x,e.z,rnd(0,TAU),2.2,.5,0xff9a9a);}});}
-   if(crit&&PV.chain&&!(P.pvChainT>0)){P.pvChainT=.5;const o=enemies().filter(x=>x!==e).sort((a,b)=>Math.hypot(a.x-e.x,a.z-e.z)-Math.hypot(b.x-e.x,b.z-e.z))[0]||e;later(.08,()=>{if(o.hp>0&&!G.over){boltFx(o.x,o.z,0xd8b0ff);hitEnemy(o,1,'magic',{pvx:1});}});}
-   if(PV.venom&&Math.random()<.1)e.burnT=Math.max(e.burnT||0,2);}
+  if(!xx.pvx&&!G.over){if(xx.basic&&PV.chase){P.pvN=(P.pvN||0)+1;if(P.pvN%5===0)later(.05,()=>{if(e.hp>0&&!G.over){hitEnemy(e,1.6,'phys',{pvx:1});sectorFx(e.x,e.z,rnd(0,TAU),2.2,.5,0xff9a9a);}});}
+   if(crit&&PV.chain&&!(P.pvChainT>0)){P.pvChainT=.5;const o=enemies().filter(x=>x!==e).sort((a,b)=>Math.hypot(a.x-e.x,a.z-e.z)-Math.hypot(b.x-e.x,b.z-e.z))[0]||e;later(.08,()=>{if(o.hp>0&&!G.over){boltFx(o.x,o.z,0xd8b0ff);hitEnemy(o,.8,'magic',{pvx:1});}});}
+   if(PV.venom&&Math.random()<.08)e.burnT=Math.max(e.burnT||0,2);}
   if(!xx.quiet||crit||Math.random()<.35)floatText(e.x,(e.h||3)*.8,e.z,d,crit?'crit':(kind==='magic'?'mag':''));burst(e.x,1.5,e.z,crit?0xffc93c:0xffffff,crit?6:3,4,.3);
   if(e.isBoss&&G.doom)G.doom.dealt+=d;if(xx.steal)healP(d*xx.steal,true);if(xx.basic){if(st.basicSteal)healP(d*st.basicSteal,true);if(st.basicCdr)for(const c in P.cds)P.cds[c]-=st.basicCdr;}if(xx.burn){e.burnT=Math.max(e.burnT||0,xx.burn);}
-  const ls=(P.stealT>0?.25:0)+st.lifesteal;if(ls>0)healP(d*ls,true);sfx(crit?'crit':'hit');
+  const ls=(P.stealT>0?.1:0)+st.lifesteal;if(ls>0)healP(d*ls,true);sfx(crit?'crit':'hit');
   if(e.isBoss){if(!e.p2&&!e.pendingP2&&e.hp<=e.maxHp/2&&e.hp>0)e.pendingP2=true;if(e.def.stars>=11&&!e.p3&&!e.pendingP3&&e.hp<=e.maxHp/2&&e.hp>0)e.pendingP3=true;if(e.hp<=0){e.hp=0;bossDown(e);}}
   else if(e.hp<=0){const i=G.minions.indexOf(e);if(i>=0)removeMinion(i,true);if(st.killHeal)healP(st.killHeal);}}
 function arcAttack(range,half,mult,kind,color,extra,xx){const a=aimP();for(const e of enemies()){const dx=e.x-P.x,dz=e.z-P.z,d=Math.hypot(dx,dz);if(d-e.r<=range&&(Math.abs(angDiff(Math.atan2(dz,dx),a))<=half||d<e.r+1)){hitEnemy(e,mult,kind||'phys',xx);if(extra)extra(e);}}sectorFx(P.x,P.z,a,range,half,color||0xfff0c0);}
@@ -2280,31 +2285,31 @@ function chargeP(dur){for(let i=0;i<14;i++){const m=new THREE.Mesh(GEO.part,bmat
 
 function dmgPlayer(n,o){if(!G||G.over||P.hp<=0)return;const dot=o&&o.dot;
   if(!dot&&P.st.dodge&&Math.random()<P.st.dodge){floatText(P.x,2.2,P.z,'見切り','heal');sfx('click');return;}
-  if(!dot&&P.st.pv&&P.st.pv.guard&&P.guardReady){P.guardReady=false;P.guardT=25;floatText(P.x,2.4,P.z,'加護','heal');ringFx(P.x,P.z,1.6,0xfff4c0,.35);sfx('heal');return;}
+  if(!dot&&P.st.pv&&P.st.pv.guard&&P.guardReady){P.guardReady=false;P.guardT=28;floatText(P.x,2.4,P.z,'加護','heal');ringFx(P.x,P.z,1.6,0xfff4c0,.35);sfx('heal');return;}
   n*=(G.hard?2:1)*(B&&B.p3?1.2:1)*(P.bulwarkT>0?.5:1)*(P.avatarT>0?.8:1)*(B&&B.def.dmgMul||1)*P.st.dmgTaken*(P.frenzyT>0?1.2:1)*(G.sanct&&Math.hypot(P.x-G.sanct.x,P.z-G.sanct.z)<G.sanct.r?.6:1);
   if(P.shield>0){const a=Math.min(P.shield,n);P.shield-=a;n-=a;if(!dot&&a>0)ringFx(P.x,P.z,1.2,0x9fd6ff,.25);}
   if(n<=0)return;P.hp-=n;
-  {const PV=P.st.pv||{};if(!dot&&PV.thorn&&!(P.thornT>0)&&!G.over){P.thornT=2;for(let i=0;i<8;i++)pshot(i/8*TAU,20,{dmg:.8,r:.2,color:0x8aff9a,stretch:2.5,pierce:true,life:.6,extra:{pvx:1}});}
-   if(PV.heart&&!P.heartUsed&&P.hp>0&&P.hp<P.maxHp*.25){P.heartUsed=true;P.hp=P.maxHp*.7;P.shield=Math.max(P.shield,40);P.shieldT=Math.max(P.shieldT,8);announce('不滅の心臓','HP70%まで回復','p2');ringFx(P.x,P.z,3,0x5fe3a1,.6);burst(P.x,1,P.z,0x5fe3a1,24,6,.6);sfx('ssr');}}
+  {const PV=P.st.pv||{};if(!dot&&PV.thorn&&!(P.thornT>0)&&!G.over){P.thornT=2;for(let i=0;i<8;i++)pshot(i/8*TAU,20,{dmg:.65,r:.2,color:0x8aff9a,stretch:2.5,pierce:true,life:.6,extra:{pvx:1}});}
+   if(PV.heart&&!P.heartUsed&&P.hp>0&&P.hp<P.maxHp*.25){P.heartUsed=true;P.hp=Math.max(P.hp,P.maxHp*.4);P.shield=Math.max(P.shield,30);P.shieldT=Math.max(P.shieldT,8);announce('不滅の心臓','HP40%まで回復','p2');ringFx(P.x,P.z,3,0x5fe3a1,.6);burst(P.x,1,P.z,0x5fe3a1,24,6,.6);sfx('ssr');}}
   if(dot){P.dotAcc+=n;if(P.dotAcc>=5){floatText(P.x,2.2,P.z,Math.round(P.dotAcc),'hurt small');P.dotAcc=0;}flash(.35);}
   else{floatText(P.x,2.2,P.z,Math.round(n),'hurt');flash(1);sfx('hurt');G.shake=Math.max(G.shake,.25);if(navigator.vibrate)try{navigator.vibrate(25);}catch(e){}}
-  if(P.hp<=0&&P.phoenixT>0){P.phoenixT=0;P.hp=P.maxHp*.4;announce('不死鳥','HP40%で踏みとどまった','p2');boomFx(P.x,P.z,3,0xff9a3d);sfx('ssr');}
-  if(P.hp<=0){if(P.st.revive&&!P.revived){P.revived=true;P.hp=P.maxHp*.3;announce('不屈の魂','HPが30%で復活','p2');ringFx(P.x,P.z,3,0xffc93c,.6);burst(P.x,1,P.z,0xffc93c,24,6,.7);}else{P.hp=0;defeat();}}}
+  if(P.hp<=0&&P.phoenixT>0){P.phoenixT=0;P.hp=P.maxHp*.2;announce('不死鳥','HP20%で踏みとどまった','p2');boomFx(P.x,P.z,3,0xff9a3d);sfx('ssr');}
+  if(P.hp<=0){if(P.st.revive&&!P.revived){P.revived=true;P.hp=P.maxHp*.25;announce('不屈の魂','HPが25%で復活','p2');ringFx(P.x,P.z,3,0xffc93c,.6);burst(P.x,1,P.z,0xffc93c,24,6,.7);}else{P.hp=0;defeat();}}}
 let flashT=0;function flash(k){const el=$('#hitflash');el.style.transition='none';el.style.opacity=String(Math.max(k*.8,parseFloat(el.style.opacity)||0));flashT=.08;}
 
 function useSkill(cat){if(!G||G.over||G.paused||!P||P.hp<=0)return;if(cat==='move'&&P.rootT>0){floatText(P.x,2.4,P.z,'拘束中','hurt small');return;}if(P.sealT>0&&P.sealCat===cat){floatText(P.x,2.4,P.z,'封印中','hurt small');return;}const sk=PSK[S.load[cat]];if(!sk||P.cds[cat]>0)return;
   const px0=P.x,pz0=P.z;sk.use();sfx({move:'whoosh',attack:'slash',magic:'magic',special:'special'}[cat]);let cd=sk.cd*P.st.cdMul;if(cat==='move')cd*=P.st.moveCd;if(cat==='special')cd*=P.st.spCd;P.cds[cat]=cd;P.cdMax[cat]=cd;if(P.st.regen)healP(P.st.regen,true);
-  {const PV=P.st.pv||{};if(PV.circuit)for(const c in P.cds)if(c!==cat)P.cds[c]=Math.max(0,P.cds[c]-1);
-   if(PV.echo&&Math.random()<.15){P.cds[cat]=0;floatText(P.x,2.6,P.z,'連続詠唱','crit small');}
+  {const PV=P.st.pv||{};if(PV.circuit)for(const c in P.cds)if(c!==cat)P.cds[c]=Math.max(0,P.cds[c]-.8);
+   if(PV.echo&&Math.random()<.12){P.cds[cat]=0;floatText(P.x,2.6,P.z,'連続詠唱','crit small');}
    if(PV.hao&&P.haoReady&&cat!=='move'){P.haoReady=false;P.haoT=10;P.haoWin=1.6;floatText(P.x,2.9,P.z,'覇王の一撃','crit');ringFx(P.x,P.z,2.5,0xff6b6b,.4);}
-   if(PV.afterimg&&cat==='move'){const m=buildPlayer(true);m.position.set(px0,0,pz0);addFx({mesh:m,life:.6,end:()=>{if(G.over)return;areaHit(px0,pz0,2.5,3,'magic',{pvx:1});boomFx(px0,pz0,2.5,0xc783ff);}});}
-   if(PV.ougi&&cat==='special'){['move','attack','magic'].forEach(c=>P.cds[c]=0);P.ougiT=5;announce('奥義覚醒','CT回復・与ダメージ1.3倍','p2');}}
+   if(PV.afterimg&&cat==='move'){const m=buildPlayer(true);m.position.set(px0,0,pz0);addFx({mesh:m,life:.6,end:()=>{if(G.over)return;areaHit(px0,pz0,2.5,2.5,'magic',{pvx:1});boomFx(px0,pz0,2.5,0xc783ff);}});}
+   if(PV.ougi&&cat==='special'){['move','attack','magic'].forEach(c=>P.cds[c]=0);P.ougiT=5;announce('奥義覚醒','CT回復・与ダメージ1.25倍','p2');}}
   const btn=$('#sk-'+cat);if(btn){btn.classList.remove('fire');void btn.offsetWidth;btn.classList.add('fire');}}
 
 /* =========================================================
    ボスAI
    ========================================================= */
-function sandOfTime(){if(P&&P.st.pv&&P.st.pv.sand&&!G.over&&P.hp>0){['move','attack','magic','special'].forEach(c=>P.cds[c]=0);healP(P.maxHp*.2);later(1.6,()=>announce('時の砂','CT回復・HP20%回復','p2'));}}
+function sandOfTime(){if(P&&P.st.pv&&P.st.pv.sand&&!G.over&&P.hp>0){['move','attack','magic','special'].forEach(c=>P.cds[c]=0);healP(P.maxHp*.08);later(1.6,()=>announce('時の砂','CT回復・HP8%回復','p2'));}}
 function* transform3(b){sandOfTime();AU.int=1;sfx('roar');announce('第三形態',b.def.p3name,'p2');$('#p2-t').textContent=b.def.p3name;$('#p2-d').textContent=b.def.p3desc;const el=$('#p2banner');el.querySelector('small').textContent='PHASE 3';el.classList.add('show');setTimeout(()=>{el.classList.remove('show');el.querySelector('small').textContent='PHASE 2';},2400);
   G.shake=1.2;for(let k=0;k<3;k++)ringFx(b.x,b.z,4+k*3,k===1?0xff3a4a:b.def.color,.6+k*.15);burst(b.x,2,b.z,0xff3a4a,50,9,.9);
   const au=new THREE.Mesh(G_('Torus',b.r+1.2,.08,6,48),new THREE.MeshBasicMaterial({color:0xff3a4a,transparent:true,opacity:.8}));au.rotation.x=Math.PI/2;au.position.y=.15;b.mesh.add(au);b.p3aura=au;
@@ -2432,18 +2437,18 @@ function updPlayer(dt){
     else{P.swords.forEach(s=>disposeObj(s));P.swords=null;}}
   P.hist=P.hist||[];P.hist.push({t:G.t,x:P.x,z:P.z,hp:P.hp});while(P.hist.length&&G.t-P.hist[0].t>2.1)P.hist.shift();
   if(P.odT>0&&P.hp>1&&!G.over){P.hp=Math.max(1,P.hp-2*dt);if(Math.random()<.4)burst(P.x,1,P.z,0xff7a4a,1,2,.3);}
-  if(P.blessT>0&&P.hp>0&&!G.over)healP(P.maxHp/3*dt,true);
+  if(P.blessT>0&&P.hp>0&&!G.over)healP(P.maxHp*.35/3*dt,true);
   if(P.mirrorT>0){P.mirrorM=P.mirrorM||(()=>{const m=new THREE.Mesh(G_('Sphere',1.6,16,10),new THREE.MeshBasicMaterial({color:0xe0f4ff,transparent:true,opacity:.18,depthWrite:false,wireframe:true}));m.position.y=1;P.mesh.add(m);return m;})();P.mirrorM.visible=true;P.mirrorM.rotation.y+=dt*2;}else if(P.mirrorM)P.mirrorM.visible=false;
   {const PV=P.st.pv||{};['thornT','pvChainT','dollT','haoWin','ougiT'].forEach(n=>P[n]=(P[n]||0)-dt);
    if(!G.over&&P.hp>0){
-    if(PV.ironwill){P.iwT=(P.iwT==null?15:P.iwT)-dt;if(P.iwT<=0){P.iwT=15;P.shield=Math.max(P.shield,20);P.shieldT=Math.max(P.shieldT,8);ringFx(P.x,P.z,1.4,0x9fd6ff,.3);}}
-    if(PV.pulse&&P.hp<P.maxHp*.4)healP(2*dt,true);
+    if(PV.ironwill){P.iwT=(P.iwT==null?15:P.iwT)-dt;if(P.iwT<=0){P.iwT=15;P.shield=Math.max(P.shield,16);P.shieldT=Math.max(P.shieldT,8);ringFx(P.x,P.z,1.4,0x9fd6ff,.3);}}
+    if(PV.pulse&&P.hp<P.maxHp*.4)healP(.8*dt,true);
     if(PV.guard&&!P.guardReady){P.guardT=(P.guardT||0)-dt;if(P.guardT<=0)P.guardReady=true;}
-    if(PV.thunder){P.thT=(P.thT==null?6:P.thT)-dt;if(P.thT<=0){P.thT=6;const t=ptarget();if(t){boltFx(t.x,t.z,0xffe14d);hitEnemy(t,4,'magic',{pvx:1});}}}
+    if(PV.thunder){P.thT=(P.thT==null?6:P.thT)-dt;if(P.thT<=0){P.thT=6;const t=ptarget();if(t){boltFx(t.x,t.z,0xffe14d);hitEnemy(t,3.2,'magic',{pvx:1});}}}
     if(PV.hao&&!P.haoReady){P.haoT=(P.haoT||0)-dt;if(P.haoT<=0)P.haoReady=true;}
-    if(PV.star){if(!P.starM){P.starM=new THREE.Mesh(G_('Octahedron',.22,0),mat(0xfff4c0,0xffe38a));scene.add(P.starM);}const a=G.t*2.5;P.starM.position.set(P.x+Math.cos(a)*1.4,2,P.z+Math.sin(a)*1.4);P.starM.rotation.y+=dt*4;P.stT=(P.stT||0)-dt;if(P.stT<=0){const t=ptarget();if(t){P.stT=1.2;const sx=P.starM.position.x,sz=P.starM.position.z;pshot(Math.atan2(t.z-sz,t.x-sx),20,{dmg:1,r:.18,color:0xfff4c0,kind:'magic',homing:3,fx:sx,fz:sz,extra:{pvx:1}});}}}
+    if(PV.star){if(!P.starM){P.starM=new THREE.Mesh(G_('Octahedron',.22,0),mat(0xfff4c0,0xffe38a));scene.add(P.starM);}const a=G.t*2.5;P.starM.position.set(P.x+Math.cos(a)*1.4,2,P.z+Math.sin(a)*1.4);P.starM.rotation.y+=dt*4;P.stT=(P.stT||0)-dt;if(P.stT<=0){const t=ptarget();if(t){P.stT=1.2;const sx=P.starM.position.x,sz=P.starM.position.z;pshot(Math.atan2(t.z-sz,t.x-sx),20,{dmg:.8,r:.18,color:0xfff4c0,kind:'magic',homing:3,fx:sx,fz:sz,extra:{pvx:1}});}}}
     if(PV.fate){P.fateT=(P.fateT==null?12:P.fateT)-dt;if(P.fateT<=0){P.fateT=12;const r=Math.floor(Math.random()*5);floatText(P.x,2.9,P.z,'運命：'+['覚醒','回復','CT回復','落雷','障壁'][r],'crit');sfx('pull');
-      if(r===0)P.awakenT=Math.max(P.awakenT,4);else if(r===1)healP(P.maxHp*.15);else if(r===2)['move','attack','magic'].forEach(c=>P.cds[c]=0);else if(r===3){const t=ptarget();if(t){boltFx(t.x,t.z,0xffd36b);hitEnemy(t,8,'magic',{pvx:1});}}else{P.shield=Math.max(P.shield,30);P.shieldT=Math.max(P.shieldT,8);}}}
+      if(r===0)P.awakenT=Math.max(P.awakenT,3.5);else if(r===1)healP(P.maxHp*.06);else if(r===2)['move','attack','magic'].forEach(c=>P.cds[c]=0);else if(r===3){const t=ptarget();if(t){boltFx(t.x,t.z,0xffd36b);hitEnemy(t,6.5,'magic',{pvx:1});}}else{P.shield=Math.max(P.shield,24);P.shieldT=Math.max(P.shieldT,8);}}}
    }}
   updZones(dt);
   if(G.spirit){const sp=G.spirit;sp.t-=dt;sp.oa+=dt*2.2;sp.x=P.x+Math.cos(sp.oa)*2.6;sp.z=P.z+Math.sin(sp.oa)*2.6;sp.mesh.position.set(sp.x,2.2+Math.sin(G.t*4)*.2,sp.z);const t=ptarget();
@@ -2453,7 +2458,7 @@ function updPlayer(dt){
     if(B&&B.hp>0&&Math.hypot(P.x-B.x,P.z-B.z)<B.r+1.3){P.bombT=0;const d=Math.round(B.maxHp*.025);B.hp-=d;G.dealt+=d;floatText(B.x,3,B.z,d,'crit');boomFx(B.x,B.z,3,0xff8a2a);G.shake=.6;announce('押し付け成功','ボスに'+d+'ダメージ','p2');if(B.def.stars>=11&&!B.p3&&!B.pendingP3&&B.hp<=B.maxHp/2&&B.hp>0)B.pendingP3=true;if(B.hp<=0){B.hp=0;bossDown(B);}}
     else if(P.bombT<=0){boomFx(P.x,P.z,3,0xff8a2a);dmgPlayer(40);}}else if(P.bombM)P.bombM.visible=false;
   if(P.stormT>0){P.stormTick-=dt;if(P.stormTick<=0){P.stormTick=.25;ringAttack(4,1.5,'phys',0xdfe8ff);sfx('slash');}if(Math.random()<.8)burst(P.x+rnd(-3,3),rnd(.5,2),P.z+rnd(-3,3),0xdfe8ff,1,2,.3);}
-  if(G.sanct){const sc=G.sanct;sc.t-=dt;sc.pil.material.opacity=.08+.05*Math.sin(G.t*5);if(Math.hypot(P.x-sc.x,P.z-sc.z)<sc.r&&P.hp>0&&!G.over)healP(5*dt,true);if(sc.t<=0){disposeObj(sc.mesh);G.sanct=null;}}
+  if(G.sanct){const sc=G.sanct;sc.t-=dt;sc.pil.material.opacity=.08+.05*Math.sin(G.t*5);if(Math.hypot(P.x-sc.x,P.z-sc.z)<sc.r&&P.hp>0&&!G.over)healP(2*dt,true);if(sc.t<=0){disposeObj(sc.mesh);G.sanct=null;}}
   if(G.ally){const al=G.ally;al.t-=dt;const ox=P.x+Math.cos(P.a+Math.PI/2)*1.6,oz=P.z+Math.sin(P.a+Math.PI/2)*1.6;al.x+=(ox-al.x)*Math.min(1,dt*8);al.z+=(oz-al.z)*Math.min(1,dt*8);al.mesh.position.set(al.x,0,al.z);al.mesh.rotation.y=-P.a;
     al.cd-=dt;const t=ptarget();if(t&&al.cd<=0&&P.hp>0){al.cd=.4;const a=Math.atan2(t.z-al.z,t.x-al.x);const p=pshot(a,24,{dmg:.9,r:.2,color:0x7fd8ff,stretch:1.8});p.x=al.x+Math.cos(a)*.6;p.z=al.z+Math.sin(a)*.6;}
     if(al.t<=0){burst(al.x,1,al.z,0x55c7ff,12,4,.4);disposeObj(al.mesh);G.ally=null;}}
@@ -2535,7 +2540,7 @@ function updShowcase(dt){showT+=dt;if(!showModel)return;showModel.rotation.y+=dt
    画面遷移
    ========================================================= */
 let curScreen='home';
-function showScreen(id){curScreen=id;['home','loadout','boss','gacha','tree','duo'].forEach(s=>$('#scr-'+s).hidden=s!==id);$('#hud').hidden=id!=='hud';if(id!=='hud')$('#bossArrow').hidden=true;$('#scr-result').hidden=true;$('#scr-pause').hidden=true;$('#scr-shop').hidden=true;$('#scr-data').hidden=true;
+function showScreen(id){curScreen=id;['home','loadout','boss','gacha','tree','duo'].forEach(s=>$('#scr-'+s).hidden=s!==id);$('#hud').hidden=id!=='hud';if(id!=='hud')$('#bossArrow').hidden=true;$('#scr-result').hidden=true;$('#scr-pause').hidden=true;$('#scr-shop').hidden=true;$('#scr-data').hidden=true;$('#upd').hidden=!(updReady&&id==='home');
   if(id!=='hud'){$('#announce').className='';$('#tsfx').style.opacity='0';$('#darkfx').style.opacity='0';$('#p2banner').classList.remove('show');const hf=$('#hitflash');hf.style.opacity='0';}
   document.documentElement.style.setProperty('--accent',id==='hud'?'#7fd8ff':(BOSS_BY[S.boss]||BOSSES[0]).css);refreshRes();}
 function refreshRes(){$$('.v-gold').forEach(e=>e.textContent=S.gold);$$('.v-sp').forEach(e=>e.textContent=S.sp);$$('.v-ssp').forEach(e=>e.textContent=S.ssp||0);$$('.v-medal').forEach(e=>e.textContent=S.medal||0);$('#h-battles').textContent=S.battles;$('#duo-dot').hidden=!DUOS.some(d=>duoOpen(d)&&!(S.duoClears||{})[d.id]);const any=TREE.some(n=>nodeState(n)==='av'&&S.sp>=n.cost)||((S.ssp||0)>0&&TREE2.some(n=>nodeState(n)==='av'&&S.ssp>=n.cost));$('#tree-dot').hidden=!any;}
@@ -2742,6 +2747,11 @@ $('#go-duo').addEventListener('click',()=>openDuo());
 $('#du-tabs').addEventListener('click',e=>{const t=e.target.closest('[data-id]');if(!t||t.dataset.id===S.duoSel)return;S.duoSel=t.dataset.id;save();renderDuoTabs();renderDuoDetail();showcaseDuo(DUOS.find(d=>d.id===S.duoSel));});
 $('#du-go').addEventListener('click',()=>{const d=DUOS.find(x=>x.id===S.duoSel);if(!d||!duoOpen(d))return;startBattle(BOSS_BY[d.a],d);});
 $('#du-lo').addEventListener('click',()=>{loReturn='duo';loCat='move';showScreen('loadout');renderLoadout();showcasePlayer();$('#lo-next').textContent='ステージを選ぶ';});
+/* ---------- 新しいバージョンのお知らせ（ホーム画面にいるときだけ出す） ---------- */
+let updReady=null;const BUILD_RE=new RegExp("const BUIL"+"D='(b[0-9]+)'");
+async function checkUpdate(){if(updReady||!/^https?:$/.test(location.protocol))return;try{const r=await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'});if(!r.ok)return;const m=BUILD_RE.exec(await r.text());if(m&&m[1]!==BUILD&&m[1]>BUILD){updReady=m[1];if(curScreen==='home'&&mode==='menu')$('#upd').hidden=false;}}catch(e){}}
+$('#upd').addEventListener('click',()=>{if(mode==='battle')return;save();try{location.replace(location.pathname+'?v='+updReady);}catch(e){location.reload();}});
+setTimeout(checkUpdate,4000);setInterval(checkUpdate,5*60*1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate();});
 /* ---------- データ引き継ぎ（コードの書き出し・読み込み） ---------- */
 function fnv(str){let h=2166136261;for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(36);}
 function toB64(u8){let b='';for(let i=0;i<u8.length;i+=8192)b+=String.fromCharCode.apply(null,u8.subarray(i,i+8192));return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
