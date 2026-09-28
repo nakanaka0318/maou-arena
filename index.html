@@ -608,7 +608,7 @@ textarea:focus{border-color:var(--accent)}
 <script>
 (function(){
 'use strict';
-const BUILD='b20260927153608';
+const BUILD='b20260928023345';
 
 /* =========================================================
    ズーム・選択ハイライトの抑止（スマホ向け）
@@ -862,6 +862,8 @@ const PS=[
    for(let i=0;i<5;i++)later(.4+i*.9,()=>{const t=ptarget();if(!t||G.over)return;const a=rnd(0,TAU);beamFx({x:t.x-Math.cos(a)*5,z:t.z-Math.sin(a)*5,a,len:10,w:.8},0xfff0b0);hitEnemy(t,4,'phys');burst(t.x,1.5,t.z,0xfff0b0,12,6,.4);sfx('slash');});}},
 ];
 const WPN_MUL=.8,SKL_MUL=.75;
+// どんなCT短縮・CT回復でも縮まない「固定CT」（基本CTの20%、最低0.5秒）
+const LOCK_R=.2;const lockCd=sk=>Math.max(.5,Math.round(sk.cd*LOCK_R*10)/10);
 const PSK={};PS.forEach(s=>PSK[s.id]=s);
 /* =========================================================
    通常攻撃（攻撃ボタン）。基本の「魔弾」以外はすべてレジェンド。
@@ -2372,8 +2374,8 @@ function dmgPlayer(n,o){if(!G||G.over||P.hp<=0)return;const dot=o&&o.dot;
   if(P.hp<=0){if(P.st.revive&&!P.revived){P.revived=true;P.hp=P.maxHp*.25;announce('不屈の魂','HPが25%で復活','p2');ringFx(P.x,P.z,3,0xffc93c,.6);burst(P.x,1,P.z,0xffc93c,24,6,.7);}else{P.hp=0;defeat();}}}
 let flashT=0;function flash(k){const el=$('#hitflash');el.style.transition='none';el.style.opacity=String(Math.max(k*.8,parseFloat(el.style.opacity)||0));flashT=.08;}
 
-function useSkill(cat){if(!G||G.over||G.paused||!P||P.hp<=0)return;if(cat==='move'&&P.rootT>0){floatText(P.x,2.4,P.z,'拘束中','hurt small');return;}if(P.sealT>0&&P.sealCat===cat){floatText(P.x,2.4,P.z,'封印中','hurt small');return;}const sk=PSK[S.load[cat]];if(!sk||P.cds[cat]>0)return;
-  const px0=P.x,pz0=P.z;sk.use();sfx({move:'whoosh',attack:'slash',magic:'magic',special:'special'}[cat]);let cd=sk.cd*P.st.cdMul;if(cat==='move')cd*=P.st.moveCd;if(cat==='special')cd*=P.st.spCd;P.cds[cat]=cd;P.cdMax[cat]=cd;if(P.st.regen)healP(P.st.regen,true);
+function useSkill(cat){if(!G||G.over||G.paused||!P||P.hp<=0)return;if(cat==='move'&&P.rootT>0){floatText(P.x,2.4,P.z,'拘束中','hurt small');return;}if(P.sealT>0&&P.sealCat===cat){floatText(P.x,2.4,P.z,'封印中','hurt small');return;}const sk=PSK[S.load[cat]];if(!sk||P.cds[cat]>0||P.lock[cat]>0)return;
+  const px0=P.x,pz0=P.z;sk.use();sfx({move:'whoosh',attack:'slash',magic:'magic',special:'special'}[cat]);let cd=sk.cd*P.st.cdMul;if(cat==='move')cd*=P.st.moveCd;if(cat==='special')cd*=P.st.spCd;P.cds[cat]=cd;P.cdMax[cat]=cd;P.lock[cat]=lockCd(sk);if(P.st.regen)healP(P.st.regen,true);
   {const PV=P.st.pv||{};if(PV.circuit)for(const c in P.cds)if(c!==cat)P.cds[c]=Math.max(0,P.cds[c]-.8);
    if(PV.echo&&Math.random()<.12){P.cds[cat]=0;floatText(P.x,2.6,P.z,'連続詠唱','crit small');}
    if(PV.hao&&P.haoReady&&cat!=='move'){P.haoReady=false;P.haoT=10;P.haoWin=1.6;floatText(P.x,2.9,P.z,'覇王の一撃','crit');ringFx(P.x,P.z,2.5,0xff6b6b,.4);}
@@ -2446,7 +2448,7 @@ function startBattle(def,duo){
   const aura=new THREE.Mesh(G_('Ring',.7,.95,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xffc93c,transparent:true,opacity:.8,depthWrite:false}));aura.position.y=.06;aura.visible=false;pm.add(aura);
   const rootM=new THREE.Mesh(G_('Torus',.7,.07,5,24),new THREE.MeshBasicMaterial({color:0xe070ff}));rootM.rotation.x=Math.PI/2;rootM.position.y=.3;rootM.visible=false;pm.add(rootM);
   pm.userData.weapon&&0;P={weaponG:pm.userData.weapon,BA,ba:{combo:0,comboT:0,n:0,charge:0,spin:0,t:0},chargeM,swing:0,swingDir:1,rootM,x:0,z:6,a:-Math.PI/2,vx:0,vz:0,ix:0,iz:0,hp:st.maxHp,maxHp:st.maxHp,st,mesh:pm,shieldM,aura,dashT:0,dvx:0,dvz:0,dashHit:null,atkT:0,slowT:0,galeT:0,awakenT:0,stealT:0,shield:st.startShield,shieldT:st.startShield?12:0,rootT:0,venomT:0,bombT:0,slipT:0,confuseT:0,sealT:0,leash:null,staticT:0,charge:0,swordsT:0,swords:null,revived:false,dotAcc:0,
-     cds:{move:0,attack:0,magic:0,special:0},cdMax:{move:1,attack:1,magic:1,special:1}};
+     cds:{move:0,attack:0,magic:0,special:0},lock:{move:0,attack:0,magic:0,special:0},cdMax:{move:1,attack:1,magic:1,special:1}};
   const bm=def.build();blob(bm,def.r*1.1);scene.add(bm);
   const bhp=bossHp(def,hard);
   if(hard){bm.traverse(o=>{if(o.material&&!Array.isArray(o.material)){const m=o.material.clone();m.userData={};if(m.color)m.color.lerp(new THREE.Color(0x1a0204),.55);if(m.emissive)m.emissive.lerp(new THREE.Color(0xff1a1a),.45);o.material=m;}});
@@ -2476,7 +2478,7 @@ function updHud(dt){const B1=G.duo?G.bosses[0]:B;
   if(B1.p2&&!hudCache.p2&&!B1.enraged){hudCache.p2=1;const ph=$('#bb-phase');ph.textContent='第二形態';ph.className='phase p2';}if(B1.p3&&!hudCache.p3&&!B1.enraged&&B1.hp>0){hudCache.p3=1;const ph=$('#bb-phase');ph.textContent='第三形態';ph.className='phase p2 p3';}
   $('#pb-fill').style.width=(Math.max(0,P.hp/P.maxHp)*100).toFixed(1)+'%';$('#pb-shield').style.width=(Math.min(1,P.shield/P.maxHp)*100).toFixed(1)+'%';
   setTxt('pb-txt',Math.ceil(Math.max(0,P.hp))+' / '+P.maxHp);
-  CATS.forEach(c=>{const b=document.getElementById('sk-'+c.id);if(!b)return;const cd=P.cds[c.id]>.05?P.cds[c.id]:0;const p=cd>0?cd/P.cdMax[c.id]:0;const key='cd'+c.id,val=p.toFixed(3)+(P.sealT>0&&P.sealCat===c.id?'s':'');
+  CATS.forEach(c=>{const b=document.getElementById('sk-'+c.id);if(!b)return;const cd0=Math.max(P.cds[c.id],P.lock[c.id]||0),cd=cd0>.05?cd0:0;const p=cd>0?Math.min(1,cd/Math.max(P.cdMax[c.id],P.lock[c.id]||0)):0;const key='cd'+c.id,val=p.toFixed(3)+(P.sealT>0&&P.sealCat===c.id?'s':'');
     if(hudCache[key]!==val){hudCache[key]=val;b.style.setProperty('--p',val);b.classList.toggle('sealed',P.sealT>0&&P.sealCat===c.id);b.querySelector('.cn').textContent=(P.sealT>0&&P.sealCat===c.id)?'封':cd>0?(cd>=10?Math.ceil(cd):cd.toFixed(1)):'';b.classList.toggle('ready',cd<=0);}});
   const bf=[];if(P.awakenT>0)bf.push(['覚醒',P.awakenT]);if(P.stealT>0)bf.push(['吸血',P.stealT]);if(P.galeT>0)bf.push(['疾風',P.galeT]);if(P.shieldT>0&&P.shield>0)bf.push(['バリア',P.shieldT]);if(P.swordsT>0)bf.push(['守護剣',P.swordsT]);if(G.frozen>0)bf.push(['時間停止',G.frozen]);if(G.decoy)bf.push(['デコイ',G.decoy.t]);if(P.focusT>0)bf.push(['集中',P.focusT]);if(P.bulwarkT>0)bf.push(['金剛',P.bulwarkT]);if(P.avatarT>0)bf.push(['化身',P.avatarT]);if(P.hasteT>0)bf.push(['加速',P.hasteT]);if(P.mirrorT>0)bf.push(['反射',P.mirrorT]);if(P.odT>0)bf.push(['限界突破',P.odT]);if(P.blessT>0)bf.push(['祝福',P.blessT]);if(G.spirit)bf.push(['竜魂',G.spirit.t]);if(P.rootT>0)bf.push(['拘束',P.rootT,1]);if(P.bombT>0)bf.push(['爆弾 ボスに触れろ',P.bombT,1]);if(P.slipT>0)bf.push(['滑る床',P.slipT,1]);if(P.confuseT>0)bf.push(['操作反転',P.confuseT,1]);if(P.sealT>0)bf.push(['封印:'+({move:'移動',attack:'攻撃',magic:'魔法',special:'特殊'})[P.sealCat],P.sealT,1]);if(P.leash)bf.push(['呪いの鎖',P.leash.t,1]);if(G.wind)bf.push(['重力風',G.wind.t,1]);if(G.doom)bf.push(['死の宣告 残'+Math.max(0,Math.ceil(G.doom.need-G.doom.dealt)),G.doom.t,1]);if(P.staticT>0)bf.push(['帯電 '+Math.min(45,Math.round(P.charge*2.6)),P.staticT,1]);if(P.venomT>0)bf.push(['猛毒',P.venomT,1]);if(P.frenzyT>0)bf.push(['狂化',P.frenzyT]);if(P.stormT>0)bf.push(['千刃',P.stormT]);if(P.phoenixT>0)bf.push(['不死鳥',P.phoenixT]);if(G.sanct)bf.push(['聖域',G.sanct.t]);if(G.ally)bf.push(['分身',G.ally.t]);if(P.clockT>0)bf.push(['時計仕掛け',P.clockT]);if(P.ougiT>0)bf.push(['奥義',P.ougiT]);if(P.st.pv.guard&&P.guardReady)bf.push(['加護',null]);if(P.st.pv.hao&&P.haoReady)bf.push(['覇王',null]);if(P.ba&&P.ba.shadow)bf.push(['影討ち',null]);if(P.ba&&P.ba.stack>=5&&G.t-P.ba.lastT<1)bf.push(['槍・最大',null]);
   const neg=P.slowT>0?'<span class="buff neg">鈍足</span>':'';const html=bf.map(([n,t,ng])=>`<span class="buff${ng?' neg':''}">${n}${(ng&&n.startsWith('帯電'))||t==null?'':' '+Math.ceil(t)}</span>`).join('')+neg;if(hudCache.bf!==html){hudCache.bf=html;$('#buffs').innerHTML=html;}
@@ -2486,7 +2488,7 @@ function updPlayer(dt){
   let ix=0,iz=0;if(joy.active){ix=joy.x;iz=joy.y;}const k=input.keys;if(k.KeyA||k.ArrowLeft)ix-=1;if(k.KeyD||k.ArrowRight)ix+=1;if(k.KeyW||k.ArrowUp)iz-=1;if(k.KeyS||k.ArrowDown)iz+=1;
   if(P.confuseT>0){ix=-ix;iz=-iz;}
   const il=Math.hypot(ix,iz);if(il>1){ix/=il;iz/=il;}if(P.hp<=0){ix=0;iz=0;}P.ix=ix;P.iz=iz;
-  ['slowT','galeT','awakenT','stealT','shieldT','swordsT','frenzyT','stormT','phoenixT','rootT','venomT','phaseT','focusT','hasteT','mirrorT','odT','blessT','noCollide','bulwarkT','avatarT','confuseT','sealT','slipT','clockT'].forEach(n=>P[n]=(P[n]||0)-dt);const px0=P.x,pz0=P.z;if(P.rootT>0){ix=0;iz=0;P.ix=0;P.iz=0;P.dashT=0;}if(P.shieldT<=0)P.shield=0;for(const c in P.cds)P.cds[c]-=dt*(P.hasteT>0?2:1)*(P.clockT>0?3:1);if(P.st.regenPs&&P.hp>0&&!G.over)healP(P.st.regenPs*dt,true);
+  ['slowT','galeT','awakenT','stealT','shieldT','swordsT','frenzyT','stormT','phoenixT','rootT','venomT','phaseT','focusT','hasteT','mirrorT','odT','blessT','noCollide','bulwarkT','avatarT','confuseT','sealT','slipT','clockT'].forEach(n=>P[n]=(P[n]||0)-dt);const px0=P.x,pz0=P.z;if(P.rootT>0){ix=0;iz=0;P.ix=0;P.iz=0;P.dashT=0;}if(P.shieldT<=0)P.shield=0;for(const c in P.cds)P.cds[c]-=dt*(P.hasteT>0?2:1)*(P.clockT>0?3:1);for(const c in P.lock)P.lock[c]-=dt;if(P.st.regenPs&&P.hp>0&&!G.over)healP(P.st.regenPs*dt,true);
   const holdingAtk=!!(input.atk||k.KeyJ||k.Space);
   const sp=P.st.spd*(holdingAtk?P.st.holdSpd:1.1)*(P.slowT>0?.55:1)*(P.galeT>0?1.6:1)*(P.stormT>0?1.3:1)*(P.odT>0?1.2:1);
   if(P.dashT>0){P.dashT-=dt;P.x+=P.dvx*dt;P.z+=P.dvz*dt;P.vx=P.dvx;P.vz=P.dvz;
@@ -2629,7 +2631,7 @@ function renderLoadout(){
   const SRC=loCat==='basic'?BASIC:PS;const own=s=>s.rar==='BASE'||S.owned.includes(s.id);
   $('#lo-title').textContent=(loCat==='basic'?'通常攻撃（攻撃ボタン）':CATS.find(c=>c.id===loCat).name+'スキル')+'　所持 '+SRC.filter(s=>s.cat===loCat&&own(s)).length+' / '+SRC.filter(s=>s.cat===loCat).length;
   const list=SRC.filter(s=>s.cat===loCat).sort((a,b)=>(own(b)-own(a))||RARS.indexOf(a.rar)-RARS.indexOf(b.rar));
-  $('#lo-list').innerHTML=list.map(s=>{const ow=own(s),eq=S.load[s.cat]===s.id;return `<button class="item ${eq?'eq':''} ${ow?'':'lock'} ${s.rar==='LEGEND'?'legend':''}" data-id="${s.id}"><div class="ico ${s.rar}">${ow?s.icon:'？'}</div><div class="meta"><div class="t"><b>${s.name}</b><span class="rar rar-${s.rar}">${s.rar==='BASE'?'基本':s.rar}</span>${eq?'<span class="eqtag">装備中</span>':''}<span class="cdv">${s.cat==='basic'?s.spec:'CT '+s.cd+'秒'}</span></div><p>${ow?s.desc:(s.rar==='LEGEND'?'未所持。スキルガチャのレジェンド枠で入手できます。':'未所持。スキルガチャで入手できます。')}</p></div></button>`;}).join('');
+  $('#lo-list').innerHTML=list.map(s=>{const ow=own(s),eq=S.load[s.cat]===s.id;return `<button class="item ${eq?'eq':''} ${ow?'':'lock'} ${s.rar==='LEGEND'?'legend':''}" data-id="${s.id}"><div class="ico ${s.rar}">${ow?s.icon:'？'}</div><div class="meta"><div class="t"><b>${s.name}</b><span class="rar rar-${s.rar}">${s.rar==='BASE'?'基本':s.rar}</span>${eq?'<span class="eqtag">装備中</span>':''}<span class="cdv">${s.cat==='basic'?s.spec:'CT '+s.cd+'秒（固定'+lockCd(s)+'秒）'}</span></div><p>${ow?s.desc:(s.rar==='LEGEND'?'未所持。スキルガチャのレジェンド枠で入手できます。':'未所持。スキルガチャで入手できます。')}</p></div></button>`;}).join('');
 }
 $('#lo-slots').addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;loCat=b.dataset.cat;renderLoadout();$('#lo-list').scrollTop=0;});
 $('#lo-list').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(!b)return;const s=loCat==='basic'?BASIC_BY[b.dataset.id]:PSK[b.dataset.id];if(!s)return;if(s.rar!=='BASE'&&!S.owned.includes(s.id)){toast('未所持のスキルです');return;}S.load[s.cat]=s.id;save();if(s.cat==='basic')showcasePlayer();renderLoadout();});
